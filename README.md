@@ -22,6 +22,7 @@
 - 单文件上限 200MB，SHA256 校验完整性
 
 ### 远程协助（RustDesk）
+- **远程协助功能由 [RustDesk](https://github.com/rustdesk/rustdesk) 实现**：画面传输、解码、连接均由其完成，LanChat 只负责发起连接与快捷键/剪贴板转发
 - 成员列表选人一键发起 RustDesk 远程连接（内嵌 `Tools\rustdesk.exe`，未修改的独立进程）
 - **快捷键转发**（基于开源 [SharpHook](https://github.com/TolikPylypchuk/SharpHook) 全局键盘钩子）：
   - 观看端按下的带修饰键组合（`Ctrl/Alt/Shift/Win + 按键`）实时注入被控端，本机不响应
