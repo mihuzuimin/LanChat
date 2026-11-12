@@ -12,14 +12,14 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="mihuzuimin.lanchat"
-    Publisher="CN=mihuzuimin"
+    Name="BBA58C87.LanChatLAN"
+    Publisher="CN=B34827FC-1D8B-4ABF-8BAB-1741AB61B2DC"
     Version="1.7.1.0"
     ProcessorArchitecture="x64" />
 
   <Properties>
     <DisplayName>LanChat 局域网聊天</DisplayName>
-    <PublisherDisplayName>mihuzuimin</PublisherDisplayName>
+    <PublisherDisplayName>迷糊追命</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 

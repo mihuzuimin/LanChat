@@ -79,10 +79,12 @@ Write-Host "makeappx pack → $msix"
 & $makeappx pack /d $stage /p $msix /o
 if ($LASTEXITCODE -ne 0) { throw "makeappx pack 失败（$LASTEXITCODE）" }
 
-# 6) 签名（本机测试用自签名证书；Subject 必须与清单 Publisher 一致）
+# 6) 签名（本机测试用自签名证书；Subject 必须与清单 Publisher 一致，动态从清单读取）
 if (-not $NoSign) {
+    $publisher = [regex]::Match($manifest, '<Identity[^>]*Publisher="([^"]+)"').Groups[1].Value
+    if (-not $publisher) { throw "无法从清单解析 Identity/@Publisher" }
     $signtool = Find-Tool "signtool.exe"
-    $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=mihuzuimin" `
+    $cert = New-SelfSignedCertificate -Type Custom -Subject $publisher `
         -KeyUsage DigitalSignature -KeyAlgorithm RSA -KeyLength 2048 `
         -CertStoreLocation Cert:\CurrentUser\My `
         -FriendlyName "LanChat MSIX dev" -NotAfter (Get-Date).AddYears(5)
