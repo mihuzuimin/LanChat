@@ -67,6 +67,10 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
     private string? _quotedPreview;
     private RemoteShortcutRelay? _shortcutRelay;
     private string? _remotePeerName;
+    private string? _pendingConnectIp;
+    private DispatcherTimer? _rustdeskFallbackTimer;
+    /// <summary>RustDesk 直连 IP 模式默认端口（对端未自定义 direct IP access 端口时使用）。</summary>
+    private const int RustDeskDirectPort = 21118;
     private readonly EventSimulator _keyInjector = EventSimulator.Create("LanChat");
     private bool _releaseByHotkey;
     private string _clipboardBaseline = string.Empty;
@@ -214,6 +218,11 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
                 if (packet.Type == "rustdesk-start")
                 {
                     await Dispatcher.InvokeAsync(() => HandleRustDeskStart(packet));
+                    continue;
+                }
+                if (packet.Type == "rustdesk-id")
+                {
+                    await Dispatcher.InvokeAsync(() => HandleRustDeskId(packet));
                     continue;
                 }
                 if (packet.Type == "remote-key")
@@ -441,6 +450,24 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
                     }
                     continue;
                 }
+                if (packet.Type == "rustdesk-id")
+                {
+                    packet.Room = _roomName;
+                    packet.From = peer.Name;
+                    packet.Sender = peer.Name;
+                    packet.SenderIp = peer.Ip;
+                    var idTarget = packet.Target ?? string.Empty;
+                    if (string.Equals(idTarget, _userName, StringComparison.OrdinalIgnoreCase))
+                        await Dispatcher.InvokeAsync(() => HandleRustDeskId(packet));
+                    else
+                    {
+                        Peer? idDestination;
+                        lock (_peerLock) idDestination = _peers.FirstOrDefault(p => p.Name.Equals(idTarget, StringComparison.OrdinalIgnoreCase));
+                        if (idDestination is not null)
+                            await WritePeerAsync(idDestination, packet, cancellationToken);
+                    }
+                    continue;
+                }
                 if (packet.Type == "clipboard")
                 {
                     packet.Room = _roomName;
@@ -580,13 +607,15 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
     {
         if (MembersList.SelectedItem is not RoomMember member) return;
         if (member.Name.Equals(_userName, StringComparison.OrdinalIgnoreCase)) return;
-        var started = RustDeskLauncher.Start($"--connect \"{member.Ip}\"");
-        AddMessage("系统", started
-            ? $"已启动 RustDesk 连接 {member.Name}（{member.Ip}），对方确认后即可控制。"
-            : "未找到 RustDesk，请确认程序目录下存在 Tools\\rustdesk.exe。", null, null);
-        if (!started) return;
+        if (!RustDeskLauncher.IsAvailable)
+        {
+            AddMessage("系统", "未找到 RustDesk，请确认程序目录下存在 Tools\\rustdesk.exe。", null, null);
+            return;
+        }
         _remotePeerName = member.Name;
-        AppLog.Write($"通过 RustDesk 连接 {member.Name}（{member.Ip}）。");
+        _pendingConnectIp = member.Ip;
+        AddMessage("系统", $"已向 {member.Name} 发起远程协助，正在获取连接信息（约 3 秒）…", null, null);
+        AppLog.Write($"发起远程协助：{member.Name}（{member.Ip}），等待对端回传 RustDesk ID 以选路。");
         try
         {
             await SendTargetedAsync(member.Name, new RoomPacket { Type = "rustdesk-start" });
@@ -595,6 +624,91 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
         {
             AppLog.Write($"通知对方启动 RustDesk 失败：{ex.Message}");
         }
+        // 对端 6 秒未回传 ID（旧版本或获取失败）则按原方式 IP 直连启动，不阻塞协助。
+        StartRustDeskFallbackTimer();
+    }
+
+    private void StartRustDeskFallbackTimer()
+    {
+        var timer = _rustdeskFallbackTimer;
+        if (timer is null)
+        {
+            timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
+            timer.Tick += (_, _) =>
+            {
+                timer.Stop();
+                ConnectRustDeskByIp("对端未回传 ID");
+            };
+            _rustdeskFallbackTimer = timer;
+        }
+        timer.Stop();
+        timer.Start();
+    }
+
+    /// <summary>收到对端回传的 RustDesk ID 后选路：直连端口探测通则 IP 直连，否则改走 ID 中继。</summary>
+    private void HandleRustDeskId(RoomPacket packet)
+    {
+        var from = packet.From ?? packet.Sender;
+        if (!string.Equals(from, _remotePeerName, StringComparison.OrdinalIgnoreCase)) return;
+        if (_pendingConnectIp is null) return;
+        _rustdeskFallbackTimer?.Stop();
+        _ = ConnectRustDeskAsync((packet.Text ?? string.Empty).Trim());
+    }
+
+    private async Task ConnectRustDeskAsync(string id)
+    {
+        var ip = _pendingConnectIp;
+        var target = _remotePeerName;
+        if (ip is null || target is null) return;
+        var directReachable = await ProbeTcpAsync(ip, RustDeskDirectPort, TimeSpan.FromSeconds(2));
+        bool started;
+        string route;
+        if (directReachable)
+        {
+            route = $"IP 直连 {ip}:{RustDeskDirectPort}";
+            started = RustDeskLauncher.Start($"--connect \"{ip}\"");
+        }
+        else if (id.Length > 0)
+        {
+            route = $"ID 中继 {id}（直连端口 {ip}:{RustDeskDirectPort} 不可达）";
+            started = RustDeskLauncher.Start($"--connect \"{id}\"");
+        }
+        else
+        {
+            route = $"IP 直连 {ip}（备用）";
+            started = RustDeskLauncher.Start($"--connect \"{ip}\"");
+        }
+        AppLog.Write($"RustDesk 连接 {target}：{route}，启动{(started ? "成功" : "失败")}。");
+        await Dispatcher.InvokeAsync(() => AddMessage("系统", started
+            ? $"RustDesk 已启动（{route}），对方确认后即可控制。"
+            : "未找到 RustDesk，请确认程序目录下存在 Tools\\rustdesk.exe。", null, null));
+    }
+
+    /// <summary>未取得对端 ID 时的回退：保持原有 IP 直连方式启动。</summary>
+    private void ConnectRustDeskByIp(string reason)
+    {
+        var ip = _pendingConnectIp;
+        var target = _remotePeerName;
+        if (ip is null || target is null) return;
+        var started = RustDeskLauncher.Start($"--connect \"{ip}\"");
+        AppLog.Write($"RustDesk 连接 {target}（{reason}），按 IP 直连 {ip} 启动{(started ? "成功" : "失败")}。");
+        AddMessage("系统", started
+            ? $"已启动 RustDesk 连接 {target}（{ip}，{reason}，未走选路），对方确认后即可控制。"
+            : "未找到 RustDesk，请确认程序目录下存在 Tools\\rustdesk.exe。", null, null);
+    }
+
+    /// <summary>探测对端 RustDesk 直连端口是否可达（决定走 IP 直连还是 ID 中继）。</summary>
+    private static async Task<bool> ProbeTcpAsync(string host, int port, TimeSpan timeout)
+    {
+        try
+        {
+            using var client = new TcpClient();
+            using var cts = new CancellationTokenSource(timeout);
+            await client.ConnectAsync(host, port, cts.Token);
+            return client.Connected;
+        }
+        catch (OperationCanceledException) { return false; }
+        catch (Exception ex) when (ex is SocketException or ObjectDisposedException) { return false; }
     }
 
     private void HandleRustDeskStart(RoomPacket packet)
@@ -606,6 +720,27 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
             ? $"{requester} 请求远程协助，已启动 RustDesk，请在 RustDesk 窗口中确认连接。"
             : $"{requester} 请求远程协助，但本机未找到 RustDesk。", null, null);
         AppLog.Write($"{requester} 请求远程协助，RustDesk 启动{(started ? "成功" : "失败")}。");
+        if (started) _ = ReplyRustDeskIdAsync(requester);
+    }
+
+    /// <summary>被控端回传本机 RustDesk ID，供发起端优先选路（IP 直连不可达时走 ID 中继）。</summary>
+    private async Task ReplyRustDeskIdAsync(string requester)
+    {
+        try
+        {
+            var id = await RustDeskLauncher.TryGetIdAsync(TimeSpan.FromSeconds(6), _shutdown.Token);
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                AppLog.Write("未能获取本机 RustDesk ID，发起端将按 IP 直连连接。");
+                return;
+            }
+            await SendTargetedAsync(requester, new RoomPacket { Type = "rustdesk-id", Text = id });
+            AppLog.Write($"已向 {requester} 回传本机 RustDesk ID。");
+        }
+        catch (Exception ex) when (ex is IOException or ObjectDisposedException or OperationCanceledException)
+        {
+            AppLog.Write($"回传 RustDesk ID 失败：{ex.Message}");
+        }
     }
 
     // ======================= 快捷键转发（SharpHook，方案来自 GitHub 开源） =======================
