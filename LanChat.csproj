@@ -18,6 +18,9 @@
     <EmbeddedResource Include="Tools\rustdesk.exe">
       <LogicalName>LanChat.Resources.rustdesk.exe</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="third_party\rustdesk-1.5.3-x86_64.exe;third_party\rustdesk-1.5.3-corresponding-source.zip;third_party\AGPL-3.0.txt">
+      <LogicalName>LanChat.RustDesk.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
     <Content Include="Tools\LICENSE-rustdesk.txt;Tools\LICENSE-libuiohook.txt;LICENSE;THIRD-PARTY-NOTICES">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

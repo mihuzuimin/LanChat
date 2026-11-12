@@ -1,0 +1,24 @@
+<Window x:Class="LanChat.RemoteControlConsentWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="远程控制申请" Width="480" Height="400" MinWidth="440" MinHeight="370"
+        WindowStartupLocation="CenterOwner" Background="#101218" Foreground="{StaticResource OnSurfaceBrush}"
+        FontFamily="Segoe UI, Microsoft YaHei UI" ResizeMode="NoResize">
+    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="24" Padding="24" Margin="8" BorderBrush="#343946" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <DockPanel>
+                <TextBlock Text="远程控制申请" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <Button Content="✕" Click="Decline_Click" Padding="9,5" DockPanel.Dock="Right"/>
+            </DockPanel>
+            <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,18">
+                <TextBlock x:Name="RequesterText" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                <TextBlock Text="希望通过 RustDesk 查看并控制此计算机的屏幕、鼠标和键盘。接受后 LanChat 会自动开启 RustDesk 的“直接 IP 访问”（TCP 21118）并启动 RustDesk；屏幕采集、键鼠操作和会话本身由 RustDesk 原生客户端处理。首次被控时 Windows 可能询问防火墙权限，请允许；若对方需要密码，请把 RustDesk 主窗口显示的临时密码告诉对方。该直连模式未加密；仅在可信网络接受请求，控制期间可随时在聊天室结束。" Foreground="#FFD180" TextWrapping="Wrap" Margin="0,10,0,0"/>
+            </StackPanel>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="拒绝" Click="Decline_Click" Margin="0,0,10,0"/>
+                <Button Content="接受并开始" Background="{StaticResource PrimaryBrush}" Foreground="White" Click="Accept_Click" IsDefault="True"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

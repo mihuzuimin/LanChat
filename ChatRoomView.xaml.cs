@@ -24,6 +24,10 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
 {
     private const long MaxAttachmentBytes = 200L * 1024 * 1024;
     private const int AttachmentChunkBytes = 512 * 1024;
+    /// <summary>中转目标是旧版本客户端时，回给发起者的提示。</summary>
+    private const string LegacyPeerNotice = "对方客户端版本过旧，暂不支持该功能，请升级对方的 LanChat。";
+    /// <summary>房间主机是旧版本时（本机以访客身份加入），回给本机的提示。</summary>
+    private const string LegacyHostNotice = "房间主机为旧版本，暂不支持该功能，请升级房主的 LanChat。";
     private const int MaxClipboardChars = 100_000;
     private const int MaxRetainedMessages = 600;
     private readonly string _roomName;
@@ -99,6 +103,7 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
             .Select(a => a.Address.ToString()).Distinct().ToArray();
         RoomSubtitle.Text = $"{string.Join(" · ", addresses)}:{port}  ·  {(IsPublic ? "公开" : "私密，仅手动加入")} · {(_password.Length == 0 ? "无密码" : "已设置密码")}";
         _ = AcceptPeersAsync(_shutdown.Token);
+        _ = HeartbeatPeersAsync(_shutdown.Token);
         try
         {
             if (IsPublic)
@@ -159,16 +164,19 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
         _password = password;
         _userName = string.IsNullOrWhiteSpace(userName) || userName == "输入用户名" ? "访客" : userName;
         _listener = null;
-        _upstream = new TcpClient();
-        _upstream.Connect(host, port);
-        _upstreamStream = _upstream.GetStream();
+        var connection = WebSocketChannel.ConnectAsync(host, port, _shutdown.Token).GetAwaiter().GetResult();
+        _upstream = connection.Client;
+        _upstreamStream = connection.Stream;
+        _upstreamChannel = connection.Channel;
         MessagesList.ItemsSource = _messages;
         MembersList.ItemsSource = _members;
         BuildEmojiPanel();
         RoomTitle.Text = roomName;
         RoleBadgeText.Text = "访客 · 局域网";
         RoomSubtitle.Text = $"{host}:{port} · 正在连接";
-        _upstreamChannel = WebSocketChannel.ClientHandshakeAsync(_upstreamStream, _shutdown.Token).GetAwaiter().GetResult();
+        AppLog.Write(_upstreamChannel.Protocol == ChannelProtocol.WebSocket
+            ? "协议协商结果：WebSocket 文本帧（新版互通）。"
+            : "协议协商结果：行分隔 JSON（对端为旧版本，已降级互通）。");
         _upstreamChannel.SendTextAsync(JsonSerializer.Serialize(new RoomPacket { Type = "join", Room = roomName, Password = password, Sender = _userName }), _shutdown.Token).GetAwaiter().GetResult();
         _ = ReadServerAsync(_upstreamChannel, _shutdown.Token);
         AppLog.Write($"正在连接聊天室“{roomName}”：{host}:{port}。");
@@ -215,6 +223,12 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
                 if (frame is null) break;
                 var packet = JsonSerializer.Deserialize<RoomPacket>(frame.Value.Text!);
                 if (packet is null) continue;
+                if (packet.Type == "heartbeat")
+                {
+                    // 旧版服务端以心跳维系 20 秒在线判定，必须回执，否则连接会被断开。
+                    await WriteUpstreamPacketAsync(new RoomPacket { Type = "heartbeat-ack" }, cancellationToken);
+                    continue;
+                }
                 if (packet.Type == "rustdesk-start")
                 {
                     await Dispatcher.InvokeAsync(() => HandleRustDeskStart(packet));
@@ -295,7 +309,15 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
                     if (complete is not null)
                         await Dispatcher.InvokeAsync(() => AddPacket(complete.Value.Packet, complete.Value.Data));
                     continue;
-                }                await Dispatcher.InvokeAsync(() =>
+                }
+                if (packet.Type is "heartbeat-ack" or "attachment-ack" ||
+                    packet.Type?.StartsWith("remote-", StringComparison.Ordinal) == true)
+                {
+                    // 旧版协议的控制回执与自研远程协助数据，不作为聊天内容展示。
+                    AppLog.Write($"已忽略与当前版本无关的房间数据：{packet.Type}。");
+                    continue;
+                }
+                await Dispatcher.InvokeAsync(() =>
                 {
                     if (packet.Type == "error") RoomSubtitle.Text = packet.Text ?? "无法加入房间";
                     else
@@ -338,6 +360,38 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
         catch (Exception ex) { AppLog.Write($"TCP 监听异常：{ex}"); }
     }
 
+    /// <summary>
+    /// 向旧版（行分隔协议）成员定时发送心跳：旧版客户端 20 秒收不到服务器数据会自行断开，
+    /// 本机据此判定旧版成员在线，超时则回收连接。新版 WebSocket 成员之间无需心跳。
+    /// </summary>
+    private async Task HeartbeatPeersAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                Peer[] peers;
+                lock (_peerLock) peers = _peers.Where(p => p.Channel.Protocol == ChannelProtocol.LineJson).ToArray();
+                foreach (var peer in peers)
+                {
+                    if (DateTime.UtcNow.Ticks - Interlocked.Read(ref peer.LastHeartbeatTicks) > TimeSpan.FromSeconds(20).Ticks)
+                    {
+                        AppLog.Write($"旧版客户端 {peer.Name} 心跳超时，关闭其连接。");
+                        peer.Client.Close();
+                        continue;
+                    }
+                    try { await WritePacketAsync(peer.Channel, new RoomPacket { Type = "heartbeat" }, cancellationToken); }
+                    catch (Exception ex) when (ex is IOException or SocketException or ObjectDisposedException or OperationCanceledException)
+                    {
+                        if (!cancellationToken.IsCancellationRequested) peer.Client.Close();
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
     private async Task HandlePeerAsync(TcpClient client, CancellationToken cancellationToken)
     {
         Peer? peer = null;
@@ -345,14 +399,14 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
         {
             client.NoDelay = true;
             var stream = client.GetStream();
-            var request = await WebSocketChannel.ReadRequestAsync(stream, cancellationToken);
-            if (request is null) return;
-            var channel = await WebSocketChannel.ServerAcceptAsync(stream, request, cancellationToken);
+            var channel = await WebSocketChannel.ServerHandshakeAsync(stream, cancellationToken);
             if (channel is null)
             {
-                AppLog.Write($"拒绝 {client.Client.RemoteEndPoint}：未通过 WebSocket 升级。");
+                AppLog.Write($"拒绝 {client.Client.RemoteEndPoint}：无法识别的连接握手。");
                 return;
             }
+            if (channel.Protocol == ChannelProtocol.LineJson)
+                AppLog.Write($"{client.Client.RemoteEndPoint} 为旧版本客户端，已按行分隔协议接入。");
             var firstFrame = await channel.ReadMessageAsync(cancellationToken);
             if (firstFrame is null || !firstFrame.Value.IsText) return;
             var hello = JsonSerializer.Deserialize<RoomPacket>(firstFrame.Value.Text!);
@@ -418,6 +472,19 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
                 if (frame is null) break;
                 var packet = JsonSerializer.Deserialize<RoomPacket>(frame.Value.Text!);
                 if (packet is null) continue;
+                Interlocked.Exchange(ref peer.LastHeartbeatTicks, DateTime.UtcNow.Ticks);
+                if (packet.Type == "heartbeat-ack") continue;
+                if (packet.Type == "heartbeat")
+                {
+                    await WritePacketAsync(channel, new RoomPacket { Type = "heartbeat-ack" }, cancellationToken);
+                    continue;
+                }
+                if (channel.Protocol == ChannelProtocol.LineJson && packet.Type?.StartsWith("remote-", StringComparison.Ordinal) == true)
+                {
+                    // 旧版远程协助（自研采集）与当前 RustDesk 方案不互通，明确告知而不是静默丢弃。
+                    await WritePacketAsync(channel, new RoomPacket { Type = "system", Text = "旧版远程协助与当前版本不互通，请升级双方的 LanChat。" }, cancellationToken);
+                    continue;
+                }
                 if (packet.Type == "command")
                 {
                     if (RoleOf(peer) != "管理员")
@@ -445,8 +512,8 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
                         lock (_peerLock) destination = _peers.FirstOrDefault(p => p.Name.Equals(target, StringComparison.OrdinalIgnoreCase));
                         if (destination is null)
                             await WritePacketAsync(channel, new RoomPacket { Type = "system", Text = $"远程协助目标“{target}”不在线。" }, cancellationToken);
-                        else
-                            await WritePeerAsync(destination, packet, cancellationToken);
+                        else if (!await WritePeerAsync(destination, packet, cancellationToken))
+                            await WritePacketAsync(channel, new RoomPacket { Type = "system", Text = LegacyPeerNotice }, cancellationToken);
                     }
                     continue;
                 }
@@ -463,8 +530,8 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
                     {
                         Peer? idDestination;
                         lock (_peerLock) idDestination = _peers.FirstOrDefault(p => p.Name.Equals(idTarget, StringComparison.OrdinalIgnoreCase));
-                        if (idDestination is not null)
-                            await WritePeerAsync(idDestination, packet, cancellationToken);
+                        if (idDestination is not null && !await WritePeerAsync(idDestination, packet, cancellationToken))
+                            await WritePacketAsync(channel, new RoomPacket { Type = "system", Text = LegacyPeerNotice }, cancellationToken);
                     }
                     continue;
                 }
@@ -481,8 +548,8 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
                     {
                         Peer? clipDestination;
                         lock (_peerLock) clipDestination = _peers.FirstOrDefault(p => p.Name.Equals(clipTarget, StringComparison.OrdinalIgnoreCase));
-                        if (clipDestination is not null)
-                            await WritePeerAsync(clipDestination, packet, cancellationToken);
+                        if (clipDestination is not null && !await WritePeerAsync(clipDestination, packet, cancellationToken))
+                            await WritePacketAsync(channel, new RoomPacket { Type = "system", Text = LegacyPeerNotice }, cancellationToken);
                     }
                     continue;
                 }
@@ -498,8 +565,8 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
                     {
                         Peer? keyDestination;
                         lock (_peerLock) keyDestination = _peers.FirstOrDefault(p => p.Name.Equals(keyTarget, StringComparison.OrdinalIgnoreCase));
-                        if (keyDestination is not null)
-                            await WritePeerAsync(keyDestination, packet, cancellationToken);
+                        if (keyDestination is not null && !await WritePeerAsync(keyDestination, packet, cancellationToken))
+                            await WritePacketAsync(channel, new RoomPacket { Type = "system", Text = LegacyPeerNotice }, cancellationToken);
                     }
                     continue;
                 }
@@ -523,6 +590,12 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
                     {
                         Dispatcher.Invoke(() => AddPacket(complete.Value.Packet, complete.Value.Data));
                         AppLog.Write($"收到成员附件：{peer.Name} ({peer.Ip})，{complete.Value.Packet.FileName}，{complete.Value.Data.LongLength:N0} 字节。");
+                        if (channel.Protocol == ChannelProtocol.LineJson)
+                        {
+                            // 旧版客户端要收到该回执才会认为附件发送完成。
+                            try { await WritePacketAsync(channel, new RoomPacket { Type = "attachment-ack", TransferId = packet.TransferId }, cancellationToken); }
+                            catch (Exception ex) when (ex is IOException or ObjectDisposedException or OperationCanceledException) { }
+                        }
                     }
                 }
                 else
@@ -580,9 +653,17 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
         await channel.SendTextAsync(JsonSerializer.Serialize(packet), cancellationToken);
     }
 
-    private async Task WritePeerAsync(Peer peer, RoomPacket packet, CancellationToken cancellationToken)
+    /// <summary>
+    /// 向成员投递定向中转数据包。
+    /// 目标是旧版本客户端（行分隔协议）时不支持 RustDesk 中转、剪贴板与按键转发，返回 false 由调用方提示。
+    /// </summary>
+    private async Task<bool> WritePeerAsync(Peer peer, RoomPacket packet, CancellationToken cancellationToken)
     {
+        if (peer.Channel.Protocol == ChannelProtocol.LineJson &&
+            packet.Type is "rustdesk-start" or "rustdesk-id" or "clipboard" or "remote-key")
+            return false;
         await peer.Channel.SendTextAsync(JsonSerializer.Serialize(packet), cancellationToken);
+        return true;
     }
 
     // ======================= 远程协助（RustDesk） =======================
@@ -595,12 +676,18 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
         packet.From = _userName;
         if (_upstreamStream is not null)
         {
+            if (_upstreamChannel?.Protocol == ChannelProtocol.LineJson)
+            {
+                await Dispatcher.InvokeAsync(() => AddMessage("系统", LegacyHostNotice, null, null));
+                return;
+            }
             await WriteUpstreamPacketAsync(packet, _shutdown.Token);
             return;
         }
         Peer? peer;
         lock (_peerLock) peer = _peers.FirstOrDefault(p => p.Name.Equals(target, StringComparison.OrdinalIgnoreCase));
-        if (peer is not null) await WritePeerAsync(peer, packet, _shutdown.Token);
+        if (peer is not null && !await WritePeerAsync(peer, packet, _shutdown.Token))
+            await Dispatcher.InvokeAsync(() => AddMessage("系统", LegacyPeerNotice, null, null));
     }
 
     private async void RequestRustDesk_Click(object sender, RoutedEventArgs e)
@@ -610,6 +697,11 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
         if (!RustDeskLauncher.IsAvailable)
         {
             AddMessage("系统", "未找到 RustDesk，请确认程序目录下存在 Tools\\rustdesk.exe。", null, null);
+            return;
+        }
+        if (_upstreamChannel?.Protocol == ChannelProtocol.LineJson)
+        {
+            AddMessage("系统", LegacyHostNotice, null, null);
             return;
         }
         _remotePeerName = member.Name;
@@ -1693,6 +1785,8 @@ public partial class ChatRoomView : System.Windows.Controls.UserControl, IDispos
 
     private sealed record Peer(TcpClient Client, WebSocketChannel Channel, string Name, string Ip)
     {
+        /// <summary>最近一次收到该成员数据的时间（旧版心跳超时判定用）。</summary>
+        public long LastHeartbeatTicks = DateTime.UtcNow.Ticks;
     }
 
     private sealed record RoomMember(string Name, string Ip, string Role)

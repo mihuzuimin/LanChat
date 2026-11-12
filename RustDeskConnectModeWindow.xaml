@@ -1,0 +1,28 @@
+<Window x:Class="LanChat.RustDeskConnectModeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="选择远程连接方式" Width="520" Height="400" MinWidth="480" MinHeight="380"
+        WindowStartupLocation="CenterOwner" Background="#101218" Foreground="{StaticResource OnSurfaceBrush}"
+        FontFamily="Segoe UI, Microsoft YaHei UI" ResizeMode="NoResize">
+    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="24" Padding="22" Margin="8" BorderBrush="#343946" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <StackPanel>
+                <TextBlock Text="选择远程连接方式" FontSize="20" FontWeight="SemiBold" />
+                <TextBlock x:Name="TargetText" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+            </StackPanel>
+            <StackPanel Grid.Row="1" Margin="0,16,0,12">
+                <TextBlock Text="同一局域网：选“IP 直连”，不经过中转，速度最快。" Foreground="#C2D2F5" FontSize="12" TextWrapping="Wrap" />
+                <TextBlock Text="不在同一网络或跨互联网：选“RustDesk ID 连接”，双方都需要能访问 RustDesk 公共服务器。" Foreground="#C2D2F5" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0" />
+                <TextBlock x:Name="IdHintText" Foreground="#FFD180" FontSize="11" TextWrapping="Wrap" Margin="0,10,0,0" Visibility="Collapsed" />
+            </StackPanel>
+            <StackPanel Grid.Row="2">
+                <Button x:Name="DirectIpButton" Content="局域网 IP 直连" Padding="16,10" Margin="0,0,0,8"
+                        Background="#252932" Foreground="#C2D2F5" Click="DirectIp_Click" />
+                <Button x:Name="IdButton" Content="RustDesk ID 连接" Padding="16,10" Margin="0,0,0,8"
+                        Background="#739CFF" Foreground="White" Click="Id_Click" />
+                <Button Content="取消本次远控" Padding="16,8" Background="#252932" Foreground="#C2D2F5" Click="Cancel_Click" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

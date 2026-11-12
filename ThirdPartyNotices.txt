@@ -1,0 +1,27 @@
+Third Party Notices
+===================
+
+FFmpeg 9.0.2 (Windows x64)
+--------------------------
+The single-file LanChat release embeds FFmpeg Windows x64 binaries distributed
+under the GNU Lesser General Public License, version 2.1 or later (LGPL-2.1+).
+The FFmpeg license text is provided in FFmpeg-LICENSE.txt. The FFmpeg project
+source is available at https://ffmpeg.org/download.html.
+
+The bundled FFmpeg executable and DLLs are distributed unmodified from the
+FFmpegDotNet.bin.winx64 9.0.2 NuGet package. This application invokes the
+bundled ffmpeg.exe for H.264 encode/decode and retains JPEG as the session
+fallback. The FFmpeg files are extracted to the current user's LocalAppData
+cache when the H.264 path is first used.
+
+RustDesk 1.5.3 (Windows x64)
+----------------------------
+The unmodified RustDesk 1.5.3 Windows x64 client is embedded as a separate
+program and extracted to the current user's LocalAppData directory when remote
+control is approved. RustDesk is licensed under GNU AGPL version 3. The full
+license text and the 1.5.3 corresponding-source package (including its pinned
+hbb_common submodule) are embedded in the application and can be exported from
+the Help window. Official project:
+https://github.com/rustdesk/rustdesk/tree/1.5.3
+Official release binary:
+https://github.com/rustdesk/rustdesk/releases/download/1.5.3/rustdesk-1.5.3-x86_64.exe

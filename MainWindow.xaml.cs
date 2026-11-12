@@ -173,10 +173,12 @@ public partial class MainWindow : Window
     {
         AppLog.Write($"开始验证房间：{dialog.RoomName} @ {dialog.Host}:{dialog.Port}。");
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        using var client = new TcpClient();
-        await client.ConnectAsync(dialog.Host, dialog.Port, timeout.Token);
-        var stream = client.GetStream();
-        var channel = await WebSocketChannel.ClientHandshakeAsync(stream, timeout.Token);
+        var connection = await WebSocketChannel.ConnectAsync(dialog.Host, dialog.Port, timeout.Token);
+        using var client = connection.Client;
+        var channel = connection.Channel;
+        AppLog.Write(channel.Protocol == ChannelProtocol.WebSocket
+            ? "协议协商结果：WebSocket 文本帧（新版互通）。"
+            : "协议协商结果：行分隔 JSON（对端为旧版本，已降级互通）。");
         await channel.SendTextAsync(JsonSerializer.Serialize(new
         {
             Type = "validate",
