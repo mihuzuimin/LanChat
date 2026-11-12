@@ -38,19 +38,20 @@ public partial class SettingsWindow : Window
     private async void Check_Click(object sender, RoutedEventArgs e)
     {
         CheckButton.IsEnabled = false;
-        StatusText.Text = "正在局域网内搜索新版本（5 秒）…";
+        StatusText.Text = "正在检查更新（GitHub 3 秒优先，随后局域网 3 秒×3 轮）…";
         UpdateOffer? offer;
-        using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+        using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15)))
         {
-            offer = await UpdateService.DiscoverAsync(TimeSpan.FromSeconds(5), timeout.Token);
+            offer = await UpdateService.CheckForUpdatesAsync(timeout.Token);
         }
         CheckButton.IsEnabled = true;
         if (offer is null)
         {
-            StatusText.Text = $"已是最新版本（{UpdateService.CurrentVersionText}）。";
+            StatusText.Text = $"未发现新版本（{UpdateService.CurrentVersionText}）。";
             return;
         }
-        StatusText.Text = $"发现新版本 {offer.VersionText}（{offer.Address}）。";
+        var origin = offer.Source == UpdateSource.GitHub ? "GitHub 仓库" : offer.Address;
+        StatusText.Text = $"发现新版本 {offer.VersionText}（{origin}）。";
         new UpdateWindow(offer) { Owner = this }.ShowDialog();
     }
 }

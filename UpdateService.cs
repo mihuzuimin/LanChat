@@ -11,7 +11,11 @@ using System.Windows;
 
 namespace LanChat;
 
-public sealed record UpdateOffer(Version Version, string Address)
+public enum UpdateSource { Lan, GitHub }
+
+/// <summary>更新来源：局域网（Address 为提供方 IP）或 GitHub Releases（AssetUrl 为发布资产地址）。</summary>
+public sealed record UpdateOffer(Version Version, string Address, UpdateSource Source = UpdateSource.Lan,
+    string? AssetUrl = null, string Notes = "", long Size = 0, bool ForceUpdate = false)
 {
     public string VersionText => UpdateService.Format(Version);
 }
@@ -23,8 +27,9 @@ public sealed record UpdateManifest(Version Version, string Notes, bool ForceUpd
 }
 
 /// <summary>
-/// 局域网更新：UDP 9178 广播发现版本，HTTP 9178 提供 /api/version 与 /api/download，
-/// 按版本号比对新旧，下载后用 SHA256 校验，forceUpdate=true 时强制自动更新。
+/// 更新检查：先查 GitHub Releases（3 秒超时，同步版本号，发现新版本自动从仓库下载）；
+/// 超时无响应回退局域网（UDP 9178 广播发现 + HTTP 9178 下载，每轮 3 秒、最多重试 3 轮）；
+/// 下载后 SHA256 校验（局域网清单提供哈希时强制比对），forceUpdate=true 时强制自动更新。
 /// </summary>
 internal static class UpdateService
 {
@@ -220,10 +225,112 @@ internal static class UpdateService
         finally { ShaLock.Release(); }
     }
 
-    // ======================= 客户端 =======================
+    // ======================= 客户端：GitHub 优先 → 局域网兜底 =======================
 
-    /// <summary>在 duration 内搜索局域网中版本更高的实例，返回最高版本。</summary>
-    public static async Task<UpdateOffer?> DiscoverAsync(TimeSpan duration, CancellationToken token)
+    private const string GitHubLatestUrl = "https://api.github.com/repos/mihuzuimin/LanChat/releases/latest";
+    private static readonly TimeSpan GithubCheckTimeout = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan LanSearchRound = TimeSpan.FromSeconds(3);
+    private const int LanSearchAttempts = 3;
+
+    /// <summary>
+    /// 更新检查总流程：① 查 GitHub Releases（3 秒超时，同步版本号，发现新版本即从仓库下载）；
+    /// ② 超时无响应转局域网搜索（每轮 3 秒，最多重试 3 轮，收到应答但无更高版本则提前结束）；
+    /// ③ 仍未发现则结束，返回 null。
+    /// </summary>
+    public static async Task<UpdateOffer?> CheckForUpdatesAsync(CancellationToken token)
+    {
+        try
+        {
+            AppLog.Write($"开始检查更新：查询 GitHub Releases（{GithubCheckTimeout.TotalSeconds:0} 秒超时）。");
+            var (github, reached) = await CheckGitHubAsync(GithubCheckTimeout, token);
+            if (github is not null) return github;
+            if (reached)
+            {
+                AppLog.Write("GitHub 最新发布不高于当前版本，无需更新。");
+                return null;
+            }
+            AppLog.Write("GitHub 3 秒无响应，转局域网搜索新版本。");
+            for (var attempt = 1; attempt <= LanSearchAttempts; attempt++)
+            {
+                AppLog.Write($"局域网搜索新版本（第 {attempt}/{LanSearchAttempts} 轮，每轮 {LanSearchRound.TotalSeconds:0} 秒）…");
+                var (offer, gotReply) = await DiscoverOnceAsync(LanSearchRound, token);
+                if (offer is not null) return offer;
+                if (gotReply)
+                {
+                    AppLog.Write("局域网内未发现更高版本，结束更新检查。");
+                    return null;
+                }
+            }
+            AppLog.Write($"局域网连续 {LanSearchAttempts} 轮搜索均无响应，结束更新检查。");
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            AppLog.Write("更新检查被取消。");
+            return null;
+        }
+    }
+
+    /// <summary>查询 GitHub Releases latest 并同步版本号比对；返回 (新版本 Offer, GitHub 是否给出响应)。</summary>
+    private static async Task<(UpdateOffer? Offer, bool Reached)> CheckGitHubAsync(TimeSpan timeout, CancellationToken token)
+    {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        cts.CancelAfter(timeout);
+        try
+        {
+            using var http = new HttpClient { Timeout = timeout };
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("LanChat-Updater");
+            var json = await http.GetStringAsync(GitHubLatestUrl, cts.Token);
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            var tag = root.GetProperty("tag_name").GetString() ?? string.Empty;
+            if (!Version.TryParse(tag.TrimStart('v', 'V'), out var version))
+            {
+                AppLog.Write($"GitHub 发布标签无法识别为版本号：{tag}。");
+                return (null, true);
+            }
+            if (version <= CurrentVersion)
+            {
+                AppLog.Write($"GitHub 最新发布 {Format(version)} 不高于当前 {CurrentVersionText}。");
+                return (null, true);
+            }
+            string? assetUrl = null;
+            var assetSize = 0L;
+            if (root.TryGetProperty("assets", out var assets))
+            {
+                foreach (var asset in assets.EnumerateArray())
+                {
+                    var name = asset.GetProperty("name").GetString() ?? string.Empty;
+                    if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
+                    assetUrl = asset.GetProperty("browser_download_url").GetString();
+                    assetSize = asset.TryGetProperty("size", out var sz) && sz.TryGetInt64(out var s) ? s : 0L;
+                    break;
+                }
+            }
+            if (assetUrl is null)
+            {
+                AppLog.Write("GitHub 已有更高版本发布，但其中没有 .exe 资产，无法自动更新。");
+                return (null, true);
+            }
+            var notes = root.TryGetProperty("body", out var body) ? body.GetString() ?? string.Empty : string.Empty;
+            var force = notes.Contains("forceUpdate:true", StringComparison.OrdinalIgnoreCase);
+            AppLog.Write($"GitHub 发现新版本 {Format(version)}，将自动从仓库下载更新。");
+            return (new UpdateOffer(version, "GitHub", UpdateSource.GitHub, assetUrl, notes, assetSize, force), true);
+        }
+        catch (OperationCanceledException) when (!token.IsCancellationRequested)
+        {
+            AppLog.Write("GitHub 更新检查 3 秒无响应。");
+            return (null, false);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or FormatException)
+        {
+            AppLog.Write($"GitHub 更新检查未取得有效响应：{ex.Message}");
+            return (null, false);
+        }
+    }
+
+    /// <summary>局域网搜索一轮：返回更高版本 Offer；gotReply 表示本轮收到过任何实例应答（网络可用）。</summary>
+    private static async Task<(UpdateOffer? Offer, bool GotReply)> DiscoverOnceAsync(TimeSpan duration, CancellationToken token)
     {
         try
         {
@@ -231,7 +338,7 @@ internal static class UpdateService
             var query = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { type = "lanchat-update-query" }));
             await udp.SendAsync(query, new IPEndPoint(IPAddress.Broadcast, UpdatePort), token);
             var deadline = DateTime.UtcNow + duration;
-            UpdateOffer? best = null;
+            var gotReply = false;
             while (DateTime.UtcNow < deadline)
             {
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -241,22 +348,21 @@ internal static class UpdateService
                     var result = await udp.ReceiveAsync(timeout.Token);
                     var message = TryParse(result.Buffer);
                     if (message?.GetPropertyOrDefault("type") != "lanchat-update-offer") continue;
+                    gotReply = true;
                     var versionText = message.Value.GetPropertyOrDefault("version");
                     if (!Version.TryParse(versionText, out var version) || version <= CurrentVersion) continue;
-                    if (best is not null && version <= best.Version) continue;
-                    best = new UpdateOffer(version, result.RemoteEndPoint.Address.ToString());
-                    AppLog.Write($"发现新版本 {Format(version)}：{best.Address}。");
-                    return best;
+                    AppLog.Write($"局域网发现新版本 {Format(version)}：{result.RemoteEndPoint.Address}。");
+                    return (new UpdateOffer(version, result.RemoteEndPoint.Address.ToString()), true);
                 }
                 catch (OperationCanceledException) { break; }
             }
-            return best;
+            return (null, gotReply);
         }
-        catch (OperationCanceledException) { return null; }
+        catch (OperationCanceledException) { return (null, false); }
         catch (Exception ex)
         {
-            AppLog.Write($"搜索更新失败：{ex.Message}");
-            return null;
+            AppLog.Write($"局域网更新搜索异常：{ex.Message}");
+            return (null, false);
         }
     }
 
@@ -288,9 +394,12 @@ internal static class UpdateService
     public static async Task<string> DownloadAsync(UpdateOffer offer, UpdateManifest? manifest, IProgress<double>? progress, CancellationToken token)
     {
         using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-        using var response = await http.GetAsync($"http://{offer.Address}:{UpdatePort}/api/download", HttpCompletionOption.ResponseHeadersRead, token);
+        var url = offer.Source == UpdateSource.GitHub
+            ? offer.AssetUrl ?? throw new InvalidDataException("GitHub 更新缺少资产下载地址。")
+            : $"http://{offer.Address}:{UpdatePort}/api/download";
+        using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token);
         response.EnsureSuccessStatusCode();
-        var length = response.Content.Headers.ContentLength ?? manifest?.Size ?? 0;
+        var length = response.Content.Headers.ContentLength ?? (offer.Source == UpdateSource.GitHub ? offer.Size : manifest?.Size ?? 0);
         if (length <= 0 || length > 500L * 1024 * 1024) throw new InvalidDataException("更新包大小异常。");
 
         var path = Path.Combine(Path.GetTempPath(), $"LanChat-{offer.VersionText}.exe");

@@ -24,11 +24,11 @@ public partial class MainWindow : Window
             _roomView = null;
             _loggerWindow?.Close();
         };
-        // 启动后静默检查局域网更新（15 秒），发现更高版本才提示。
+        // 启动后静默检查更新：GitHub Releases 3 秒优先，超时回退局域网 3 秒×3 轮，发现新版本才提示。
         Loaded += async (_, _) =>
         {
             if (!AppSettings.AutoCheckUpdate) return;
-            var offer = await UpdateService.DiscoverAsync(TimeSpan.FromSeconds(15), CancellationToken.None);
+            var offer = await UpdateService.CheckForUpdatesAsync(CancellationToken.None);
             if (offer is null) return;
             AppLog.Write($"启动静默检查发现新版本 {offer.VersionText}，提示强制更新。");
             new UpdateWindow(offer) { Owner = this }.ShowDialog();

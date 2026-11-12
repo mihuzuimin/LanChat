@@ -13,7 +13,8 @@ public partial class UpdateWindow : Window
         InitializeComponent();
         _offer = offer;
         LatestText.Text = $"新版本 {offer.VersionText}";
-        CurrentText.Text = $"当前版本 {UpdateService.CurrentVersionText} · 来源 {offer.Address}:{UpdateService.UpdatePort}";
+        var source = offer.Source == UpdateSource.GitHub ? "GitHub Releases" : $"{offer.Address}:{UpdateService.UpdatePort}";
+        CurrentText.Text = $"当前版本 {UpdateService.CurrentVersionText} · 来源 {source}";
         Closed += (_, _) => { if (!_updating) AppLog.Write("用户关闭了更新提示。"); };
         Loaded += async (_, _) => await PrepareAsync();
     }
@@ -22,7 +23,10 @@ public partial class UpdateWindow : Window
     private async Task PrepareAsync()
     {
         StatusText.Text = "正在读取更新说明…";
-        _manifest = await UpdateService.FetchManifestAsync(_offer, CancellationToken.None);
+        // GitHub 来源的版本信息已随检查返回，直接使用；局域网来源仍需拉取 /api/version 清单。
+        _manifest = _offer.Source == UpdateSource.GitHub
+            ? new UpdateManifest(_offer.Version, _offer.Notes, _offer.ForceUpdate, string.Empty, _offer.Size)
+            : await UpdateService.FetchManifestAsync(_offer, CancellationToken.None);
         if (_manifest is null)
         {
             StatusText.Text = "未获取到更新说明，可直接下载更新包。";
