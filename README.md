@@ -127,7 +127,7 @@ LanChat 共使用 **6 条通信通道**，各司其职：
 | [github.com/TolikPylypchuk/SharpHook](https://github.com/TolikPylypchuk/SharpHook) | 全局键盘钩子捕获 + 按键注入（快捷键转发、Ctrl+Alt 释放热键） | MIT | NuGet 包引用 `SharpHook 8.0.1` |
 | [github.com/kwhat/libuiohook](https://github.com/kwhat/libuiohook) | SharpHook 捆绑的原生键盘钩子 DLL（`uiohook.dll`） | **LGPL-3.0-or-later** | 随 SharpHook 分发，动态链接、未修改 |
 | [github.com/dotnet/runtime](https://github.com/dotnet/runtime) | .NET 8 运行时与 WPF 框架（自包含发布内嵌） | MIT | `-r win-x64 --self-contained` 随包发布 |
-| [MiSans 字体官方页](https://hyperos.mi.com/font/)（小米） | 界面全局字体 | 小米 MiSans 免费商用许可 | `Fonts\` 目录内嵌 OTF 资源 |
+| [MiSans 字体官方页](https://hyperos.mi.com/font/)（[FAQ](https://hyperos.mi.com/font/zh/faq/)，小米） | 界面全局字体 | 小米 MiSans 免费商用许可（全球免费商用，允许嵌入） | `Fonts\` 目录内嵌 OTF 资源 |
 
 > 协议栈零第三方依赖，均为本项目自行实现：WebSocket 握手与 RFC 6455 帧编解码、UDP 发现协议为**纯手写**（`WebSocketChannel.cs`）；zip 打包/还原基于 .NET 内置 `System.IO.Compression`；网络层仅使用 `System.Net.Sockets` 框架库。
 > 界面为 Miuix 风格的手写 XAML，仅风格参考，未引用其代码库。
@@ -165,7 +165,7 @@ LanChat 共使用 **6 条通信通道**，各司其职：
 | [SharpHook](https://github.com/TolikPylypchuk/SharpHook) | MIT | 无 | 保留版权与许可声明（已收录 THIRD-PARTY-NOTICES） |
 | [libuiohook](https://github.com/kwhat/libuiohook)（SharpHook 原生 DLL） | **LGPL-3.0-or-later** | 无（动态链接、可替换，见下） | 随包附 LGPL 全文 + 标注源码地址；**修改**该 DLL 则修改版须 LGPL 开源 |
 | [.NET Runtime](https://github.com/dotnet/runtime) | MIT | 无 | 保留 .NET 声明（已收录 THIRD-PARTY-NOTICES） |
-| [MiSans 字体](https://hyperos.mi.com/font/) | 小米 MiSans 免费商用许可 | 无 | 遵守小米官方协议，不得单独提取字体出售 |
+| [MiSans 字体](https://hyperos.mi.com/font/)（[FAQ](https://hyperos.mi.com/font/zh/faq/)） | 小米 MiSans 免费商用许可 | 无 | 全球免费商用、允许作为嵌入式字体分发（须在软件中注明使用了 MiSans，见 [官方 FAQ](https://hyperos.mi.com/font/zh/faq/)）；不得单独提取字体或其组件出售 |
 
 ### 两个容易误会的点
 
