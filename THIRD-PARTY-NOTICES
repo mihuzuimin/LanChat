@@ -1,0 +1,57 @@
+第三方组件与资源声明（THIRD-PARTY-NOTICES）
+
+LanChat 本体代码以 MIT 许可证发布（见 LICENSE）。以下第三方组件与资源不适用
+于 MIT，各自遵循其原有许可证。以二进制形式分发 LanChat 时，请随包保留本文件。
+
+===============================================================================
+
+1. RustDesk
+   位置：Tools\rustdesk.exe（构建时作为内嵌资源打包，运行时释放为独立进程启动）
+   许可证：GNU Affero General Public License v3.0（AGPL-3.0）
+   版权：Copyright (c) RustDesk 社区贡献者
+   主页：https://github.com/rustdesk/rustdesk
+   完整许可证文本：随发行包提供，见 Tools\LICENSE-rustdesk.txt
+
+   说明：本项目以未修改的原始可执行文件形式随包分发 RustDesk，二者构成“聚合
+   （aggregation）”而非衍生作品；LanChat 本体代码不受 AGPL-3.0 传染，仍为 MIT。
+   但分发 LanChat 二进制时必须一并提供上述 AGPL-3.0 许可证文本与源码获取地址。
+   如您修改了 RustDesk 并对外分发或提供网络服务，须依 AGPL-3.0 公开对应源码。
+
+===============================================================================
+
+2. SharpHook
+   位置：经 NuGet 引用的托管依赖（8.0.1），用于全局键盘钩子捕获与按键注入
+   许可证：MIT License
+   版权：Copyright (c) 2021 Anatoliy Pylypchuk
+   主页：https://github.com/TolikPylypchuk/SharpHook
+   许可证文本：https://licenses.nuget.org/MIT
+
+   说明：要求在复制或再分发时保留上述版权声明与许可文本（本文件即为保留）。
+
+===============================================================================
+
+3. MiSans 字体
+   位置：Fonts\MiSans-Regular.otf、Fonts\MiSans-Bold.otf（以资源形式内嵌于程序）
+   许可证：Xiaomi MiSans 字体许可协议（全球免费商用字体）
+   版权：Copyright (c) Xiaomi Inc.
+   主页：https://hyperos.mi.com/font/
+
+   说明：内嵌字体用于界面显示，使目标机器无需预装即可正常排版。再分发本程序
+   时，接收方使用字体同样须遵守小米 MiSans 许可协议；不得将字体文件单独提取
+   出售或以违反原协议的方式再利用。
+
+===============================================================================
+
+4. .NET 运行时
+   位置：自包含单文件发布内嵌的 .NET 运行时类库（win-x64）
+   许可证：MIT License（.NET Library License）
+   版权：Copyright (c) .NET Foundation and Contributors
+   主页：https://github.com/dotnet/runtime
+   许可证文本：https://licenses.nuget.org/MIT
+
+   说明：LanChat 以自包含方式发布，二进制内含 .NET 运行时，故随附本声明。
+
+===============================================================================
+
+如需各组件许可证的完整逐字文本，请访问对应主页或本仓库 LICENSES 目录
+（若已提供）。

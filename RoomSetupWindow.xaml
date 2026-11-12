@@ -1,0 +1,64 @@
+<Window x:Class="LanChat.RoomSetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="新建聊天室" Width="480" Height="470" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Foreground="{DynamicResource OnSurfaceBrush}" FontFamily="{StaticResource AppFontFamily}" TextOptions.TextFormattingMode="Display">
+    <Border CornerRadius="26" Padding="30" Background="{DynamicResource CardGradientBrush}" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="8" Direction="270" Color="#1B2333" Opacity="0.16" />
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <DockPanel>
+                <Border Width="42" Height="42" CornerRadius="14" Background="{DynamicResource SuccessSoftBrush}" Margin="0,0,12,0" DockPanel.Dock="Left">
+                    <TextBlock Text="＋" FontSize="20" Foreground="{DynamicResource SuccessTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="新建聊天室" FontSize="20" FontWeight="SemiBold" />
+                    <TextBlock Text="设置房间信息并启动局域网群聊" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" />
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ToggleButton x:Name="PinToggle" Content="📌" ToolTip="窗口置顶" Padding="9,5" Checked="Pin_Checked" Unchecked="Pin_Unchecked" Margin="0,0,7,0" />
+                    <Button Content="✕" ToolTip="关闭窗口" Padding="9,5" Click="CloseWindow_Click" />
+                </StackPanel>
+            </DockPanel>
+
+            <StackPanel Grid.Row="1" Margin="0,22,0,0">
+                <TextBlock Text="房间名" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,6" />
+                <TextBox x:Name="RoomNameInput" MaxLength="48" VerticalContentAlignment="Center" />
+            </StackPanel>
+
+            <Grid Grid.Row="2" Margin="0,14,0,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,7,0">
+                    <TextBlock Text="房间端口（1024–65535）" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,6" />
+                    <TextBox x:Name="PortInput" Text="47821" VerticalContentAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="7,0,0,0">
+                    <TextBlock Text="房间密码（可选）" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" Margin="2,0,0,6" />
+                    <PasswordBox x:Name="PasswordInput" VerticalContentAlignment="Center" />
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="3" Margin="2,18,0,0">
+                <TextBlock Text="房间隐私" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,7" />
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="PublicOption" Content="公开（可被搜索）" GroupName="RoomPrivacy" IsChecked="True" Margin="0,0,10,0" />
+                    <RadioButton x:Name="PrivateOption" Content="私密（仅手动加入）" GroupName="RoomPrivacy" />
+                </StackPanel>
+            </StackPanel>
+
+            <TextBlock x:Name="ErrorText" Grid.Row="4" Margin="2,12,0,0" FontSize="11.5" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" />
+
+            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+                <Button Content="取消" Click="Cancel_Click" Margin="0,0,10,0" Padding="20,9" />
+                <Button Content="创建房间" Style="{StaticResource PrimaryButton}" Click="Confirm_Click" IsDefault="True" Padding="22,9" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

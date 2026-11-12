@@ -1,0 +1,27 @@
+<Window x:Class="LanChat.LoggerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="程序运行日志" Width="780" Height="500" MinWidth="580" MinHeight="340"
+        WindowStartupLocation="CenterScreen" Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource OnSurfaceBrush}"
+        FontFamily="{StaticResource AppFontFamily}" TextOptions.TextFormattingMode="Display" Closed="Window_Closed">
+    <Grid Margin="22">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <DockPanel Margin="2,0,2,14">
+            <Border Width="40" Height="40" CornerRadius="13" Background="{DynamicResource InfoSoftBrush}" Margin="0,0,12,0" DockPanel.Dock="Left">
+                <TextBlock Text="≣" FontSize="18" Foreground="{DynamicResource InfoTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="程序运行日志" FontSize="19" FontWeight="SemiBold" />
+                <TextBlock Text="实时记录当前程序的房间和连接活动" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="保存日志" Click="SaveLog_Click" Padding="12,7" Margin="0,0,8,0" />
+                <ToggleButton Content="📌 置顶" Padding="10,6" Checked="Pin_Checked" Unchecked="Pin_Unchecked" />
+            </StackPanel>
+        </DockPanel>
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="18" Padding="10" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1">
+            <ListBox x:Name="EntriesList" BorderThickness="0" Background="Transparent" FontFamily="Consolas, Microsoft YaHei UI" FontSize="12"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto" ItemsSource="{Binding Entries}" />
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseAppHost>true</UseAppHost>
+    <Version>1.7.0</Version>
+    <AssemblyVersion>1.7.0.0</AssemblyVersion>
+    <FileVersion>1.7.0.0</FileVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Fonts\MiSans-Regular.otf" />
+    <Resource Include="Fonts\MiSans-Bold.otf" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Tools\rustdesk.exe">
+      <LogicalName>LanChat.Resources.rustdesk.exe</LogicalName>
+    </EmbeddedResource>
+    <Content Include="Tools\LICENSE-rustdesk.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SharpHook" Version="8.0.1" />
+  </ItemGroup>
+</Project>

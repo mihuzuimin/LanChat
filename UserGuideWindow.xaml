@@ -1,0 +1,91 @@
+<Window x:Class="LanChat.UserGuideWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="使用帮助" Width="720" Height="740" MinWidth="600" MinHeight="540"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource OnSurfaceBrush}"
+        FontFamily="{StaticResource AppFontFamily}" TextOptions.TextFormattingMode="Display">
+    <Window.Resources>
+        <Style x:Key="GuideHeading" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
+            <Setter Property="Margin" Value="0,22,0,0" />
+        </Style>
+        <Style x:Key="GuideBody" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="LineHeight" Value="22" />
+            <Setter Property="Foreground" Value="#4B5563" />
+            <Setter Property="Margin" Value="0,7,0,0" />
+        </Style>
+    </Window.Resources>
+    <Grid Margin="24">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <DockPanel Margin="2,0,0,16">
+            <Border Width="44" Height="44" CornerRadius="14" Background="{DynamicResource AccentSoftBrush}" Margin="0,0,13,0" DockPanel.Dock="Left">
+                <TextBlock Text="?" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="使用帮助" FontSize="23" FontWeight="SemiBold" />
+                <TextBlock Text="局域聊天室快速指南" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,0" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <ToggleButton Content="📌 置顶" Padding="10,6" Checked="Pin_Checked" Unchecked="Pin_Unchecked" Margin="0,0,8,0" />
+                <Button Content="✕" ToolTip="关闭窗口" Padding="10,6" Click="CloseWindow_Click" />
+            </StackPanel>
+        </DockPanel>
+
+        <Border Grid.Row="1" Background="{DynamicResource CardGradientBrush}" CornerRadius="20" Padding="26,20" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,6,0">
+                    <TextBlock Style="{StaticResource GuideHeading}" Text="1. 设置用户名" Margin="0" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="在主页点击“输入用户名”设置显示名称。加入或创建房间前必须先设置用户名。" />
+
+                    <TextBlock Style="{StaticResource GuideHeading}" Text="2. 创建聊天室" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="点击“新建聊天室”，填写房间名与端口并选择公开/私密；密码可留空。公开房间可通过局域网搜索发现；私密房间不会响应搜索，只能手动输入房间名、房主 IPv4 地址、端口和密码加入。聊天使用你填写的 TCP 端口。创建者成为房主，其他设备需在同一局域网中，并允许程序通过 Windows 防火墙通信。" />
+
+                    <TextBlock Style="{StaticResource GuideHeading}" Text="3. 加入聊天室" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="“搜索已创建的聊天室”会查找局域网广播的房间；也可以选择“加入指定聊天室”并输入房间名、房主 IPv4 地址、端口和密码。" />
+
+                    <TextBlock Style="{StaticResource GuideHeading}" Text="4. 群聊、附件与表情" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="输入文字后点击“发送”，或按 Ctrl+Enter 发送。点击“😊 表情”可从常用表情面板中选取；也可按 Win+. 打开系统表情面板。对任意聊天消息点击右键，可选择“引用该消息”（输入框上方会出现引用栏，可点 ✕ 取消）或“复制文本”。使用“发送文件”或“发送图片”选择附件；图片会显示缩略图，附件收发时输入框上方会显示传输进度条。单个附件最大 200 MB。收到附件后点击“下载附件…”并在系统保存窗口中选择路径；“默认下载位置…”可更改默认目录。被房主禁言时，程序会在本机拦截文字和附件发送。" />
+
+                    <TextBlock Style="{StaticResource GuideHeading}" Text="5. 房主与管理员管理指令" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="房主可在聊天输入框使用以下命令。用户名或 IP 含空格时暂不支持：" />
+                    <Border Background="{DynamicResource SurfaceAltBrush}" CornerRadius="12" Padding="16,13" Margin="0,10,0,0" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1">
+                        <TextBlock FontFamily="Consolas, Microsoft YaHei UI" FontSize="12" Foreground="{DynamicResource OnSurfaceBrush}" TextWrapping="Wrap" LineHeight="24">
+                            /mute 用户名或IP — 切换禁言状态&#xA;
+                            /kick 用户名或IP — 移出并阻止本房间内再次加入&#xA;
+                            /ban 用户名或IP — 禁止再次加入本房间&#xA;
+                            /ipban IP — 按 IP 禁止再次加入&#xA;
+                            /unban 用户名或IP — 解除指定用户或 IP 封禁&#xA;
+                            /unipban IP — 解除 IP 封禁&#xA;
+                            /admin 用户名或IP — 设为管理员&#xA;
+                            /unadmin 用户名或IP — 取消管理员&#xA;
+                            /help — 显示指令用法
+                        </TextBlock>
+                    </Border>
+                    <TextBlock Style="{StaticResource GuideBody}" Text="房主可在“成员列表”中右键在线成员，选择“设为管理员”或“取消管理员”；管理员只能由房主从成员列表中设置，且必须是当前房间成员。被设为管理员的成员可以执行除 /admin、/unadmin 之外的全部管理指令，其管理操作会发送给房主执行，并在房间内广播角色变更。管理员离开房间后再次以相同用户名或 IP 加入，会自动恢复管理员身份。" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="聊天窗口的“成员列表”可折叠显示房间成员，并通过右键菜单复制用户名/IP 或执行禁言、踢出、封禁操作。“封禁列表”可查看当前房间的封禁项并解除用户或 IP 封禁。成员和封禁信息仅在房间运行期间有效。" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="禁言和封禁仅在当前房间运行期间有效。房间关闭后会清除。" Foreground="{DynamicResource MutedBrush}" FontSize="11.5" />
+
+                    <TextBlock Style="{StaticResource GuideHeading}" Text="6. 窗口置顶" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="每个页面都可单独点击“📌 置顶”，让当前窗口保持在其他窗口上方；取消勾选即可恢复普通层级。" />
+
+                    <TextBlock Style="{StaticResource GuideHeading}" Text="7. 入房提示与主机关闭" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="成员加入时，房间内会显示用户名和内网 IPv4 地址。房主关闭聊天室后，其他成员会看到“主机已关闭连接”提示；点击确定或等待 5 秒，聊天室窗口会自动关闭。" />
+
+                    <TextBlock Style="{StaticResource GuideHeading}" Text="8. 实时运行日志" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="在主页打开“运行日志”开关，可显示独立日志窗口并实时查看房间创建与加入、聊天消息、附件操作和连接状态。关闭开关或日志窗口即可停止显示。" />
+
+                    <TextBlock Style="{StaticResource GuideHeading}" Text="9. 自动保存运行日志" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="程序从启动时会在后台持续记录操作事件、实时房间/连接状态、监听与发现活动、消息和附件收发、异常信息及周期状态快照。退出时会在程序所在目录生成独立的 LanChat-runtime-时间戳.txt 文件；此文件与用户通过“保存日志”主动导出的文件分开。" />
+
+                    <TextBlock Style="{StaticResource GuideHeading}" Text="10. 房间成员身份与移出提示" />
+                    <TextBlock Style="{StaticResource GuideBody}" Text="聊天消息会标记创建者或访客。成员被踢出、封禁或 IP 封禁时会收到对应弹窗；之后尝试重新加入也会收到相同原因提示。相关限制仅在房间本次运行期间有效。" Margin="0,7,0,10" />
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+        <Button Grid.Row="2" Content="关闭" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right" Click="Close_Click" Margin="0,16,0,0" Padding="26,9" />
+    </Grid>
+</Window>

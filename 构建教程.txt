@@ -1,0 +1,44 @@
+LanChat 构建教程
+================
+
+一、构建环境
+- Windows 10/11
+- .NET 8 SDK（包含 Windows 桌面/WPF targeting pack）
+- 无需安装第三方运行库或第三方 UI 库
+
+二、项目源码
+项目文件：LanChat.csproj
+主界面及窗口由项目根目录下的 .xaml 和 .xaml.cs 文件组成。
+bin、obj 是构建过程中自动生成的目录，不包含项目所需的原始代码；删除后可以重新生成。
+
+三、普通 Release 构建
+在 PowerShell 中进入本文件所在目录，然后运行：
+
+  dotnet restore .\LanChat.csproj
+  dotnet build .\LanChat.csproj -c Release
+
+普通构建输出位于：
+  .\bin\Release\net8.0-windows\
+
+四、发布为 Windows x64 单文件 exe
+在 PowerShell 中运行：
+
+  dotnet publish .\LanChat.csproj -c Release -r win-x64 --self-contained true `
+    -p:PublishSingleFile=true `
+    -p:IncludeNativeLibrariesForSelfExtract=true `
+    -p:EnableWindowsTargeting=true `
+    -o .\publish
+
+最终程序位于：
+  .\publish\LanChat.exe
+
+该发布方式将 .NET 运行时随程序打包，目标计算机无需单独安装 .NET Runtime。发布时仍需要 .NET SDK 和网络可用，以便还原 SDK 所需的目标包。
+
+五、清理构建输出
+清理普通 Release 输出：
+  dotnet clean .\LanChat.csproj -c Release
+
+同时清理 win-x64 发布构建缓存：
+  dotnet clean .\LanChat.csproj -c Release -r win-x64
+
+bin、obj 中的构建内容可由后续 build/publish 自动重新生成。不要删除 .cs、.xaml、.csproj 等项目源码和项目文件。

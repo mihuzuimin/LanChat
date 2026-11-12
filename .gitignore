@@ -1,0 +1,16 @@
+# 构建产物
+[Bb]in/
+[Oo]bj/
+.vs/
+publish/
+publish-fd/
+
+# 用户与临时文件
+*.user
+*.suo
+*.log
+Temp/
+
+# 系统文件
+Thumbs.db
+.DS_Store
