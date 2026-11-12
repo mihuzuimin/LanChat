@@ -73,6 +73,7 @@ powershell -ExecutionPolicy Bypass -File Packaging\build-msix.ps1
 - 图标资源在 `Packaging\Assets\`，由 `Packaging\New-LogoAssets.ps1` 生成（更换设计时重跑）
 - 清单 `Packaging\AppxManifest.xml`：声明 `runFullTrust` + 局域网/网络能力，打包版运行时通过 `GetCurrentPackageFullName` 识别，**自更新检查自动跳过**（商店版由 Microsoft Store 分发更新）
 - 本机安装需管理员先信任自签名证书（`Import-Certificate` 到 `Cert:\LocalMachine\TrustedPeople`）再 `Add-AppxPackage`；同机双实例联调若连不上，需 `checknetisolation LoopbackExempt` 放行回环
+- 商店提交的清单必改项、证书配置与提交流程见 [Packaging\商店提交说明.md](Packaging/商店提交说明.md)
 
 ---
 
