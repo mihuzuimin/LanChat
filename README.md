@@ -101,6 +101,19 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 
 ---
 
+## 协作者声明
+
+本项目由以下协作者共同完成，按贡献阶段与分工列示：
+
+| 协作者 | 贡献内容 |
+|---|---|
+| [LKQGames](https://github.com/LKQGames) | **框架与奠基**：初步框架与界面搭建、首批功能开发，并提供整体开发方向及各功能的实现思路 |
+| [mihuzuimin](https://github.com/mihuzuimin) | **迭代与维护**：后续功能的添加与移除、Bug 修复、UI 优化与体验打磨 |
+
+项目的后续演进以两位协作者的共同意愿为准；对具体代码的作者权归属，以 Git 提交记录为准。
+
+---
+
 ## 开源协议
 
 ### 本体代码：MIT License
