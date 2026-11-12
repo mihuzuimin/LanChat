@@ -84,13 +84,24 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 
 ---
 
+## 引用的开源仓库
+
+本项目为独立开发的 WPF 应用，**未复制其他聊天室/局域网聊天项目的源码**。以下为实际依赖与引用的原始开源仓库及资源：
+
+| 原始开源仓库 / 来源 | 用途 | 许可证 | 引入方式 |
+|---|---|---|---|
+| [github.com/rustdesk/rustdesk](https://github.com/rustdesk/rustdesk) | 远程桌面控制（远程协助功能） | **AGPL-3.0** | 未修改的官方 `rustdesk.exe` 放在 `Tools\`，构建时内嵌、运行时释放为**独立进程**启动；属聚合分发，不改变本体 MIT 性质 |
+| [github.com/TolikPylypchuk/SharpHook](https://github.com/TolikPylypchuk/SharpHook) | 全局键盘钩子捕获 + 按键注入（快捷键转发、Ctrl+Alt 释放热键） | MIT | NuGet 包引用 `SharpHook 8.0.1` |
+| [github.com/dotnet/runtime](https://github.com/dotnet/runtime) | .NET 8 运行时与 WPF 框架（自包含发布内嵌） | MIT | `-r win-x64 --self-contained` 随包发布 |
+| [MiSans 字体官方页](https://hyperos.mi.com/font/)（小米） | 界面全局字体 | 小米 MiSans 免费商用许可 | `Fonts\` 目录内嵌 OTF 资源 |
+
+> 协议栈（WebSocket RFC 6455 收发、UDP 局域网发现、zip 打包传输）均为本项目**手写实现**，未引入第三方网络库。
+> 界面为 Miuix 风格的手写 XAML，仅风格参考，未引用其代码库。
+
+---
+
 ## 许可证
 
 本体代码采用 [MIT License](LICENSE)，版权 `Copyright (c) 2026 mihuzuimin`。
 
-第三方组件各自遵循原许可证，完整声明见 [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES)：
-
-- **RustDesk** — AGPL-3.0（未修改的独立进程随包分发，不改变本体 MIT 性质）
-- **SharpHook** — MIT
-- **MiSans 字体** — 小米 MiSans 免费商用许可
-- **.NET 运行时** — MIT
+上表各组件的合规声明（版权声明、许可证文本获取方式、聚合分发说明）完整版见 [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES)。
