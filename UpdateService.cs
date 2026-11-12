@@ -42,6 +42,24 @@ internal static class UpdateService
 
     public static string Format(Version version) => $"{version.Major}.{version.Minor}.{version.Build}";
 
+    private const int AppModelErrorNoPackage = 15700;
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, ExactSpelling = true)]
+    private static extern int GetCurrentPackageFullName(ref int packageFullNameLength, System.Text.StringBuilder? packageFullName);
+
+    /// <summary>
+    /// 是否以 MSIX 打包运行（商店版）。打包版不能自替换可执行文件，
+    /// 更新检查与下载更新由 Microsoft Store 分发接管，自更新逻辑直接跳过。
+    /// </summary>
+    public static bool IsPackaged
+    {
+        get
+        {
+            var length = 0;
+            return GetCurrentPackageFullName(ref length, null) != AppModelErrorNoPackage;
+        }
+    }
+
     private static UdpClient? _udp;
     private static TcpListener? _tcp;
     private static CancellationTokenSource? _cts;
@@ -239,6 +257,11 @@ internal static class UpdateService
     /// </summary>
     public static async Task<UpdateOffer?> CheckForUpdatesAsync(CancellationToken token)
     {
+        if (IsPackaged)
+        {
+            AppLog.Write("商店打包版：跳过自更新检查，更新由 Microsoft Store 分发接管。");
+            return null;
+        }
         try
         {
             AppLog.Write($"开始检查更新：查询 GitHub Releases（{GithubCheckTimeout.TotalSeconds:0} 秒超时）。");

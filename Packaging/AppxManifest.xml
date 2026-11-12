@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  LanChat MSIX 打包清单。
+  - Identity Publisher (CN=mihuzuimin) 必须与签名证书 Subject 完全一致；
+    上传商店后需改为 Partner Center 分配的发行者值。
+  - Version 由 build-msix.ps1 按 csproj 的 <Version> 自动替换。
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="mihuzuimin.lanchat"
+    Publisher="CN=mihuzuimin"
+    Version="1.7.1.0"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>LanChat 局域网聊天</DisplayName>
+    <PublisherDisplayName>mihuzuimin</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="zh-CN" />
+    <Resource Language="en-US" />
+  </Resources>
+
+  <Applications>
+    <Application Id="LanChat" Executable="LanChat.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="LanChat 局域网聊天"
+        Description="无需服务器的局域网聊天室：建房搜房、传文件、远程协助"
+        BackgroundColor="#2A2A2E"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+          Square71x71Logo="Assets\Square71x71Logo.png"
+          Wide310x150Logo="Assets\Wide310x150Logo.png"
+          Square310x310Logo="Assets\Square310x310Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- 桌面完整信任应用（WPF 全功能运行） -->
+    <rescap:Capability Name="runFullTrust" />
+    <!-- 访问公网：GitHub Releases 版本比对与下载 -->
+    <Capability Name="internetClient" />
+    <!-- 监听公网/入站连接：房间 TCP 服务、更新 HTTP 服务 -->
+    <Capability Name="internetClientServer" />
+    <!-- 局域网：UDP 房间发现 47820 / 更新搜索 9178、房间与更新 TCP/HTTP 连接 -->
+    <Capability Name="privateNetworkClientServer" />
+  </Capabilities>
+</Package>

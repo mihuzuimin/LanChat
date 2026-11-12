@@ -5,6 +5,11 @@
 publish/
 publish-fd/
 
+# MSIX 打包中间产物与工具缓存
+Packaging/.tools/
+Packaging/stage/
+Packaging/out/
+
 # 用户与临时文件
 *.user
 *.suo

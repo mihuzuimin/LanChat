@@ -62,6 +62,18 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 
 更详细的说明见 [构建教程.txt](构建教程.txt)。
 
+### MSIX 打包（微软商店）
+
+```bash
+powershell -ExecutionPolicy Bypass -File Packaging\build-msix.ps1
+```
+
+- 产物：`Packaging\out\LanChat_<版本>.msix`（版本号自动取自 csproj），默认用自签名证书签名供本机安装测试；商店提交加 `-NoSign`（由 Partner Center 签名）
+- `makeappx`/`signtool` 优先使用本机 Windows SDK，缺失时自动从 NuGet `Microsoft.Windows.SDK.BuildTools` 下载到 `Packaging\.tools`（已 gitignore）
+- 图标资源在 `Packaging\Assets\`，由 `Packaging\New-LogoAssets.ps1` 生成（更换设计时重跑）
+- 清单 `Packaging\AppxManifest.xml`：声明 `runFullTrust` + 局域网/网络能力，打包版运行时通过 `GetCurrentPackageFullName` 识别，**自更新检查自动跳过**（商店版由 Microsoft Store 分发更新）
+- 本机安装需管理员先信任自签名证书（`Import-Certificate` 到 `Cert:\LocalMachine\TrustedPeople`）再 `Add-AppxPackage`；同机双实例联调若连不上，需 `checknetisolation LoopbackExempt` 放行回环
+
 ---
 
 ## 已知限制
