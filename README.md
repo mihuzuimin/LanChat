@@ -95,7 +95,7 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 | [github.com/dotnet/runtime](https://github.com/dotnet/runtime) | .NET 8 运行时与 WPF 框架（自包含发布内嵌） | MIT | `-r win-x64 --self-contained` 随包发布 |
 | [MiSans 字体官方页](https://hyperos.mi.com/font/)（小米） | 界面全局字体 | 小米 MiSans 免费商用许可 | `Fonts\` 目录内嵌 OTF 资源 |
 
-> 协议栈（WebSocket RFC 6455 收发、UDP 局域网发现、zip 打包传输）均为本项目**手写实现**，未引入第三方网络库。
+> 协议栈零第三方依赖，均为本项目自行实现：WebSocket 握手与 RFC 6455 帧编解码、UDP 发现协议为**纯手写**（`WebSocketChannel.cs`）；zip 打包/还原基于 .NET 内置 `System.IO.Compression`；网络层仅使用 `System.Net.Sockets` 框架库。
 > 界面为 Miuix 风格的手写 XAML，仅风格参考，未引用其代码库。
 
 ---
