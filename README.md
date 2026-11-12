@@ -118,7 +118,7 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 
 ### 本体代码：MIT License
 
-全文见 [LICENSE](LICENSE)，版权 `Copyright (c) 2026 mihuzuimin`。
+全文见 [LICENSE](LICENSE)，版权 `Copyright (c) 2026 mihuzuimin, LKQGames`。
 
 - **你可以**：商用、修改、私用、再分发（含闭源集成），无需事先申请授权
 - **你的义务**：在副本中保留 LICENSE 文件与版权声明
