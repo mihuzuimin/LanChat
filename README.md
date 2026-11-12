@@ -77,10 +77,42 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 | 部分 | 方案 |
 |---|---|
 | UI | WPF · .NET 8（单窗口架构，视图切换） |
-| 传输 | 手写 WebSocket（RFC 6455）+ 行/帧 JSON 协议，TCP 长连接 |
-| 发现 / 更新 | UDP 广播（发现）+ HTTP version.json（更新） |
+| 传输 | 手写 WebSocket（RFC 6455）+ JSON 文本帧协议，TCP 长连接 |
+| 发现 / 更新 | UDP 广播（房间发现 47820 / 更新搜索 9178）+ HTTP 更新服务 9178 + GitHub Releases |
 | 全局键盘 | SharpHook（libuiohook 封装）钩子捕获 + 事件模拟注入 |
 | 远程控制 | RustDesk（AGPL-3.0，独立进程聚合分发） |
+
+---
+
+## 通信协议与端口
+
+LanChat 共使用 **6 条通信通道**，各司其职：
+
+| 通道 | 协议 / 端口 | 用于什么服务 |
+|---|---|---|
+| **房间主连接** | TCP + **WebSocket（RFC 6455）**，房间创建时指定端口（例 `47821`），UTF-8 JSON 文本帧 | 聊天室的**全部业务**：加入验证、聊天消息、成员与权限、附件传输、远程协助信令、快捷键与剪贴板转发 |
+| **房间发现** | **UDP 47820** 广播 | 局域网自动搜房：`discover` 请求 → 公开房间回 `room` 应答（房间名 / 主机地址 / 端口 / 是否需密码） |
+| **更新搜索** | **UDP 9178** 广播 | 局域网内找新版本：`lanchat-update-query` → 在线实例回 `lanchat-update-offer`（版本号），最多搜索 3 轮、每轮 3 秒 |
+| **更新服务** | **HTTP 9178** | 本机作为更新源对外提供：`/api/version` 版本清单（版本号、更新说明、SHA256、是否强制更新、包大小）；`/api/download` 更新包下载 |
+| **GitHub Releases** | **HTTPS** `api.github.com` | **首选更新源**：3 秒内比对 Release tag 版本号，发现新版自动从仓库下载 `.exe`；超时无响应才回退局域网 |
+| **远程桌面** | RustDesk 私有协议（画面/音频/文件流，本程序不实现） | 远程协助的实际传输：**IP 直连**（TCP `21118`，direct IP access）优先；直连端口探测不通时自动改用 **RustDesk ID** 走官方中继。LanChat 只负责选路信令与按键/剪贴板转发 |
+
+### 房间 WebSocket 协议的包类型（`Type` 字段路由）
+
+| 类别 | 包类型 | 说明 |
+|---|---|---|
+| 加入与会话 | `validate` · `join` · `joined` · `error` | 先 `validate` 探测房间名与密码，再正式 `join`；`error` 携带拒绝原因 |
+| 连接状态 | `system` · `host-closed` · `removed` | 系统提示、房主关闭房间、被踢出 |
+| 成员同步 | `member-joined` · `member-left` · `role-changed` · `mute-state` | 成员进出、管理员任免、禁言状态实时同步 |
+| 聊天与附件 | `text` · `file` · `image` · `folder` · `attachment-chunk` | 文字（含引用与表情）；附件按 512KB 分块流式传输 + SHA256 校验；`folder` 为 zip 打包传输、接收端还原目录 |
+| 管理指令 | `command` | `/mute`、`/unmute` 等管理指令，服务端校验执行者必须是房主或管理员 |
+| 远程协助信令 | `rustdesk-start` · `rustdesk-id` · `remote-key` · `clipboard` | 均为 **Target 定向包**（点对点路由）：发起协助请求、回传 RustDesk ID 供选路、快捷键按键转发（`Key` + `InputType`）、跨设备剪贴板同步 |
+
+> **定向路由**：上述定向包在访客与房主之间经房间主连接转发（服务端按 `Target` 字段投递），
+> 因此两端即使都位于 NAT 之后也能互通——这与聊天消息的广播语义不同。
+>
+> **版本兼容**：协议已由早期的「行分隔 JSON」迁移为 WebSocket。**新旧版本不能互通**——
+> 用新版加入旧版开的房间会在升级握手阶段失败（提示"WebSocket 升级失败"），两端请使用同一版本。
 
 ---
 
