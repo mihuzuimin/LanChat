@@ -13,12 +13,12 @@
 
   <Identity
     Name="BBA58C87.LanChatLAN"
-    Publisher="CN=B34827FC-1D8B-4ABF-8BAB-1741AB61B2DC"
+    Publisher="CN=B34827FC-1DBB-4ABF-8BAB-1741AB61B2DC"
     Version="1.7.1.0"
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>LanChat 局域网聊天</DisplayName>
+    <DisplayName>LanChat LAN</DisplayName>
     <PublisherDisplayName>迷糊追命</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -35,7 +35,7 @@
   <Applications>
     <Application Id="LanChat" Executable="LanChat.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="LanChat 局域网聊天"
+        DisplayName="LanChat LAN"
         Description="无需服务器的局域网聊天室：建房搜房、传文件、远程协助"
         BackgroundColor="#2A2A2E"
         Square150x150Logo="Assets\Square150x150Logo.png"
