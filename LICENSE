@@ -19,3 +19,55 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+===============================================================================
+                        以下为补充说明，非许可证条款正文
+     仅用于解释上述 MIT License 在本项目中的适用范围，不改变其法律效力
+===============================================================================
+
+一、本许可证的适用范围
+
+  本 LICENSE 覆盖且仅覆盖 LanChat 本体源码，包括：C# 源码（.cs）、界面标记
+  （.xaml）、项目配置（.csproj）、本仓库内的文档（README、构建教程等）。
+
+  发行包中随附的第三方组件【不】受本许可证约束，各自遵循其原有许可证，
+  完整清单、版权信息与分发义务见 THIRD-PARTY-NOTICES，摘要如下：
+
+    · RustDesk        —— AGPL-3.0        （Tools\rustdesk.exe，独立进程聚合）
+    · SharpHook       —— MIT             （NuGet 托管依赖）
+    · libuiohook      —— LGPL-3.0-or-later（uiohook.dll，动态链接）
+    · .NET 运行时      —— MIT             （自包含发布内嵌）
+    · MiSans 字体      —— 小米 MiSans 免费商用许可（Fonts\ 内嵌）
+
+二、权利与义务速览（对应上方英文正文）
+
+  【你可以】
+    1. 商业使用：将本软件用于任何商业或个人用途，无需付费或申请授权；
+    2. 自由修改：修改源码并用于内部或对外产品；
+    3. 自由复制与分发：原样或修改后复制、发布、再分发（含闭源集成）；
+    4. 私用与衍生：私下使用，或基于本代码开发衍生作品。
+
+  【你必须】
+    1. 在所有副本（含实质部分）中保留上述版权声明与许可文本；
+    2. 再分发二进制时，随附 THIRD-PARTY-NOTICES 及其中列明的第三方
+       许可证文本（RustDesk 的 AGPL 全文、libuiohook 的 LGPL 全文等）。
+
+  【免责与责任边界】
+    1. 本软件按“原样”提供，不附带任何明示或暗示的担保；
+    2. 在任何情况下，作者或版权持有人不对任何索赔、损害或其他责任负责。
+
+三、第三方组件的特别提示
+
+  1. RustDesk（AGPL-3.0）：本项目分发的是未修改的官方独立进程，构成“聚合”，
+     不传染本体的 MIT 性质；但您修改并分发 RustDesk 本体时，须以 AGPL-3.0
+     开源您的修改版本。
+  2. libuiohook（LGPL-3.0-or-later）：本项目以动态链接方式加载且未修改该
+     DLL，使用者可自行替换；您若修改该库并再分发，修改版须以 LGPL 开源。
+
+四、项目与许可证信息
+
+    项目名称：LanChat · 局域网聊天室
+    仓库地址：https://github.com/mihuzuimin/LanChat
+    SPDX 标识：SPDX-License-Identifier: MIT
+    MIT 官方全文：https://opensource.org/license/mit
+    第三方声明文件：THIRD-PARTY-NOTICES（与本文件同目录）
