@@ -18,7 +18,7 @@
     <EmbeddedResource Include="Tools\rustdesk.exe">
       <LogicalName>LanChat.Resources.rustdesk.exe</LogicalName>
     </EmbeddedResource>
-    <Content Include="Tools\LICENSE-rustdesk.txt">
+    <Content Include="Tools\LICENSE-rustdesk.txt;Tools\LICENSE-libuiohook.txt;LICENSE;THIRD-PARTY-NOTICES">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>

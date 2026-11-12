@@ -92,6 +92,7 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 |---|---|---|---|
 | [github.com/rustdesk/rustdesk](https://github.com/rustdesk/rustdesk) | 远程桌面控制（远程协助功能） | **AGPL-3.0** | 未修改的官方 `rustdesk.exe` 放在 `Tools\`，构建时内嵌、运行时释放为**独立进程**启动；属聚合分发，不改变本体 MIT 性质 |
 | [github.com/TolikPylypchuk/SharpHook](https://github.com/TolikPylypchuk/SharpHook) | 全局键盘钩子捕获 + 按键注入（快捷键转发、Ctrl+Alt 释放热键） | MIT | NuGet 包引用 `SharpHook 8.0.1` |
+| [github.com/kwhat/libuiohook](https://github.com/kwhat/libuiohook) | SharpHook 捆绑的原生键盘钩子 DLL（`uiohook.dll`） | **LGPL-3.0-or-later** | 随 SharpHook 分发，动态链接、未修改 |
 | [github.com/dotnet/runtime](https://github.com/dotnet/runtime) | .NET 8 运行时与 WPF 框架（自包含发布内嵌） | MIT | `-r win-x64 --self-contained` 随包发布 |
 | [MiSans 字体官方页](https://hyperos.mi.com/font/)（小米） | 界面全局字体 | 小米 MiSans 免费商用许可 | `Fonts\` 目录内嵌 OTF 资源 |
 
@@ -100,8 +101,45 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 
 ---
 
-## 许可证
+## 开源协议
 
-本体代码采用 [MIT License](LICENSE)，版权 `Copyright (c) 2026 mihuzuimin`。
+### 本体代码：MIT License
 
-上表各组件的合规声明（版权声明、许可证文本获取方式、聚合分发说明）完整版见 [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES)。
+全文见 [LICENSE](LICENSE)，版权 `Copyright (c) 2026 mihuzuimin`。
+
+- **你可以**：商用、修改、私用、再分发（含闭源集成），无需事先申请授权
+- **你的义务**：在副本中保留 LICENSE 文件与版权声明
+- **免责声明**：本软件不提供任何明示或暗示担保，使用风险自负
+
+### 内含第三方组件协议一览
+
+| 组件 | 协议 | 对本体的传染性 | 分发时的义务 |
+|---|---|---|---|
+| [RustDesk](https://github.com/rustdesk/rustdesk) | **AGPL-3.0** | 无（独立进程聚合，见下） | 随包附 AGPL 全文 + 标注源码地址；**修改** RustDesk 则修改版须 AGPL 开源 |
+| [SharpHook](https://github.com/TolikPylypchuk/SharpHook) | MIT | 无 | 保留版权与许可声明（已收录 THIRD-PARTY-NOTICES） |
+| [libuiohook](https://github.com/kwhat/libuiohook)（SharpHook 原生 DLL） | **LGPL-3.0-or-later** | 无（动态链接、可替换，见下） | 随包附 LGPL 全文 + 标注源码地址；**修改**该 DLL 则修改版须 LGPL 开源 |
+| [.NET Runtime](https://github.com/dotnet/runtime) | MIT | 无 | 保留 .NET 声明（已收录 THIRD-PARTY-NOTICES） |
+| [MiSans 字体](https://hyperos.mi.com/font/) | 小米 MiSans 免费商用许可 | 无 | 遵守小米官方协议，不得单独提取字体出售 |
+
+### 两个容易误会的点
+
+**① RustDesk 是 AGPL-3.0，为什么 LanChat 本体还能是 MIT？**
+`rustdesk.exe` 是**未修改的官方原始文件**，以独立进程方式启动，与 LanChat 构成
+“聚合（mere aggregation）”而非衍生作品——AGPL 不跨进程传染。分发义务（附许可证
+全文 + 源码地址）已由随包的 `Tools\LICENSE-rustdesk.txt` 履行；只有当你**修改并
+分发** RustDesk 本体时，才需要以 AGPL 公开对应源码。
+
+**② SharpHook 是 MIT，为什么包里还有个 LGPL？**
+SharpHook 的托管层是 MIT，但它捆绑的原生钩子库 **libuiohook 是 LGPL-3.0-or-later**。
+LanChat 通过 SharpHook **动态链接**加载 `uiohook.dll` 且未作任何修改——LGPL 正是
+为这种使用场景设计：本程序代码保持 MIT，只需随包提供 LGPL 许可证文本与源码地址，
+且使用者可自行替换该 DLL。
+
+### 分发 LanChat.exe 的合规清单
+
+以下许可证文件已配置为随发布包生成（csproj `Content`），转发时请保持完整：
+
+- `LICENSE` —— 本体 MIT 许可证
+- `THIRD-PARTY-NOTICES` —— 全部第三方组件声明（本节的详细依据）
+- `Tools\LICENSE-rustdesk.txt` —— AGPL-3.0 全文
+- `Tools\LICENSE-libuiohook.txt` —— LGPL-3.0 全文

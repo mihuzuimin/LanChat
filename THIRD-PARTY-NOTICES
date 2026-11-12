@@ -30,7 +30,21 @@ LanChat 本体代码以 MIT 许可证发布（见 LICENSE）。以下第三方�
 
 ===============================================================================
 
-3. MiSans 字体
+3. libuiohook（SharpHook 捆绑的原生键盘钩子库）
+   位置：uiohook.dll（SharpHook NuGet 包 runtimes\win-x64\native，单文件发布时
+         内嵌于可执行文件，运行时解压加载）
+   许可证：GNU Lesser General Public License v3.0 or later（LGPL-3.0-or-later）
+   版权：Copyright (C) 2006-2023 Alexander Barker. All Rights Reserved.
+   主页：https://github.com/kwhat/libuiohook
+   完整许可证文本：随发行包提供，见 Tools\LICENSE-libuiohook.txt
+
+   说明：LanChat 通过 SharpHook 以动态链接方式加载该 DLL，未作任何修改，符合
+   LGPL-3.0 对动态链接的要求——LanChat 自身代码仍为 MIT，使用者可自行替换该
+   DLL。若您修改 libuiohook 并再分发，修改版须以 LGPL-3.0 开源。
+
+===============================================================================
+
+4. MiSans 字体
    位置：Fonts\MiSans-Regular.otf、Fonts\MiSans-Bold.otf（以资源形式内嵌于程序）
    许可证：Xiaomi MiSans 字体许可协议（全球免费商用字体）
    版权：Copyright (c) Xiaomi Inc.
@@ -42,7 +56,7 @@ LanChat 本体代码以 MIT 许可证发布（见 LICENSE）。以下第三方�
 
 ===============================================================================
 
-4. .NET 运行时
+5. .NET 运行时
    位置：自包含单文件发布内嵌的 .NET 运行时类库（win-x64）
    许可证：MIT License（.NET Library License）
    版权：Copyright (c) .NET Foundation and Contributors
@@ -53,5 +67,5 @@ LanChat 本体代码以 MIT 许可证发布（见 LICENSE）。以下第三方�
 
 ===============================================================================
 
-如需各组件许可证的完整逐字文本，请访问对应主页或本仓库 LICENSES 目录
-（若已提供）。
+如需各组件许可证的完整逐字文本，请访问对应主页，或查看发行包 Tools 目录下
+随附的 LICENSE-rustdesk.txt（AGPL-3.0）与 LICENSE-libuiohook.txt（LGPL-3.0）。
