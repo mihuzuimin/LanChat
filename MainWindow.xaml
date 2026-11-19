@@ -1,82 +1,83 @@
-<Window x:Class="LanChat.MainWindow"
+﻿<Window x:Class="LanChat.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="局域聊天室" Width="1080" Height="760" MinWidth="900" MinHeight="640"
-        WindowStartupLocation="CenterScreen" Background="#101218" Foreground="{StaticResource OnSurfaceBrush}"
-        FontFamily="Segoe UI, Microsoft YaHei UI">
+        WindowStartupLocation="CenterScreen" Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource OnSurfaceBrush}"
+        FontFamily="{StaticResource AppFontFamily}">
     <Grid Margin="32">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <DockPanel Grid.Row="0" Margin="0,0,0,30">
-            <Border Width="54" Height="54" CornerRadius="19" Background="#27344E" Margin="0,0,16,0" DockPanel.Dock="Left">
-                <TextBlock Text="✉" FontSize="27" Foreground="#739CFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Border Width="54" Height="54" CornerRadius="19" Background="{DynamicResource AccentSoftBrush}" Margin="0,0,16,0" DockPanel.Dock="Left">
+                <TextBlock Text="✉" FontSize="27" Foreground="{DynamicResource PrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="局域聊天室" FontSize="25" FontWeight="SemiBold" />
-                <TextBlock Text="和同一局域网中的朋友轻松交流" FontSize="13" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                <TextBlock Text="和同一局域网中的朋友轻松交流" FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" />
             </StackPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button x:Name="HelpButton" Content="帮助" Click="HelpButton_Click" Background="#252A35" Foreground="#C2D2F5" Padding="15,9" Margin="0,0,9,0" />
-                <ToggleButton x:Name="LogToggle" Content="运行日志" Background="#252A35" Foreground="#C2D2F5" Padding="12,9" Margin="0,0,9,0" Checked="LogToggle_Checked" Unchecked="LogToggle_Unchecked" />
-                <ToggleButton Content="📌 置顶" Background="#252A35" Foreground="#C2D2F5" Padding="12,9" Margin="0,0,9,0" Checked="Pin_Checked" Unchecked="Pin_Unchecked" />
-                <Button x:Name="UsernameButton" Content="输入用户名" Click="UsernameButton_Click" Background="#739CFF" Foreground="White" Padding="15,9" />
+                <ToggleButton x:Name="ThemeToggle" Content="🌙 深色" Padding="12,9" Margin="0,0,9,0" Checked="ThemeToggle_Checked" Unchecked="ThemeToggle_Unchecked" />
+                <Button x:Name="HelpButton" Content="帮助" Click="HelpButton_Click" Background="{DynamicResource SurfaceAltBrush}" Foreground="{DynamicResource AccentTextBrush}" Padding="15,9" Margin="0,0,9,0" />
+                <ToggleButton x:Name="LogToggle" Content="运行日志" Background="{DynamicResource SurfaceAltBrush}" Foreground="{DynamicResource AccentTextBrush}" Padding="12,9" Margin="0,0,9,0" Checked="LogToggle_Checked" Unchecked="LogToggle_Unchecked" />
+                <ToggleButton Content="📌 置顶" Background="{DynamicResource SurfaceAltBrush}" Foreground="{DynamicResource AccentTextBrush}" Padding="12,9" Margin="0,0,9,0" Checked="Pin_Checked" Unchecked="Pin_Unchecked" />
+                <Button x:Name="UsernameButton" Content="输入用户名" Click="UsernameButton_Click" Background="{DynamicResource PrimaryBrush}" Foreground="{DynamicResource OnPrimaryBrush}" Padding="15,9" />
             </StackPanel>
         </DockPanel>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions><ColumnDefinition Width="1.2*"/><ColumnDefinition Width="18"/><ColumnDefinition Width=".8*"/></Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="#27344E" CornerRadius="30" Padding="38">
+            <Border Grid.Column="0" Background="{DynamicResource AccentSoftBrush}" CornerRadius="30" Padding="38">
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <StackPanel VerticalAlignment="Center" MaxWidth="470" HorizontalAlignment="Left">
-                        <Border Background="#202634" CornerRadius="14" Padding="12,7" HorizontalAlignment="Left" Margin="0,0,0,20">
-                            <TextBlock Text="欢迎加入" Foreground="#C2D2F5" FontSize="12" FontWeight="SemiBold" />
+                        <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="14" Padding="12,7" HorizontalAlignment="Left" Margin="0,0,0,20">
+                            <TextBlock Text="欢迎加入" Foreground="{DynamicResource AccentTextBrush}" FontSize="12" FontWeight="SemiBold" />
                         </Border>
-                        <TextBlock Text="让交流，&#xA;从一个房间开始。" FontSize="34" FontWeight="SemiBold" LineHeight="44" Foreground="#DCE7FF" />
-                        <TextBlock Text="创建一个新聊天室，或找到已有房间继续对话。" TextWrapping="Wrap" FontSize="15" LineHeight="24" Foreground="#D0D2DB" Margin="0,18,0,0" />
+                        <TextBlock Text="让交流，&#xA;从一个房间开始。" FontSize="34" FontWeight="SemiBold" LineHeight="44" Foreground="{DynamicResource OnSurfaceBrush}" />
+                        <TextBlock Text="创建一个新聊天室，或找到已有房间继续对话。" TextWrapping="Wrap" FontSize="15" LineHeight="24" Foreground="{DynamicResource OnSurfaceBrush}" Margin="0,18,0,0" />
                     </StackPanel>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Bottom">
-                        <Border Width="36" Height="36" CornerRadius="18" Background="#2E3D59" Margin="0,0,10,0">
-                            <TextBlock Text="✦" Foreground="#C2D2F5" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" />
+                        <Border Width="36" Height="36" CornerRadius="18" Background="{DynamicResource LineBrush}" Margin="0,0,10,0">
+                            <TextBlock Text="✦" Foreground="{DynamicResource AccentTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" />
                         </Border>
-                        <TextBlock Text="你的局域网会话，从这里开始" VerticalAlignment="Center" Foreground="#D0D2DB" FontSize="12" />
+                        <TextBlock Text="你的局域网会话，从这里开始" VerticalAlignment="Center" Foreground="{DynamicResource OnSurfaceBrush}" FontSize="12" />
                     </StackPanel>
                 </Grid>
             </Border>
 
             <StackPanel Grid.Column="2" VerticalAlignment="Center">
                 <TextBlock Text="开始使用" FontSize="21" FontWeight="SemiBold" Margin="4,0,0,7" />
-                <TextBlock Text="选择一种方式进入聊天室" Foreground="{StaticResource MutedBrush}" FontSize="13" Margin="4,0,0,22" />
+                <TextBlock Text="选择一种方式进入聊天室" Foreground="{DynamicResource MutedBrush}" FontSize="13" Margin="4,0,0,22" />
 
-                <Button x:Name="JoinRoomButton" Click="JoinRoom_Click" Background="{StaticResource PrimaryBrush}" Foreground="White" Padding="18,0" Height="78" Margin="0,0,0,13">
+                <Button x:Name="JoinRoomButton" Click="JoinRoom_Click" Background="{DynamicResource PrimaryBrush}" Foreground="{DynamicResource OnPrimaryBrush}" Padding="18,0" Height="78" Margin="0,0,0,13">
                     <Grid Width="300"><Grid.ColumnDefinitions><ColumnDefinition Width="46"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <Border Width="38" Height="38" CornerRadius="19" Background="#8DADFF" VerticalAlignment="Center"><TextBlock Text="↗" FontSize="22" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                        <Border Width="38" Height="38" CornerRadius="19" Background="{DynamicResource SoftAccentBrush}" VerticalAlignment="Center"><TextBlock Text="↗" FontSize="22" Foreground="{DynamicResource OnPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left"><TextBlock Text="加入指定聊天室" FontSize="15" /><TextBlock Text="输入房间名称或邀请码" FontSize="11" FontWeight="Normal" Opacity=".82" Margin="0,3,0,0" /></StackPanel>
                         <TextBlock Grid.Column="2" Text="›" FontSize="24" VerticalAlignment="Center" Margin="12,0,0,0" />
                     </Grid>
                 </Button>
 
-                <Button x:Name="SearchRoomButton" Click="SearchRoom_Click" Background="#252A35" Foreground="#C2D2F5" Padding="18,0" Height="78" Margin="0,0,0,13">
+                <Button x:Name="SearchRoomButton" Click="SearchRoom_Click" Background="{DynamicResource SurfaceAltBrush}" Foreground="{DynamicResource AccentTextBrush}" Padding="18,0" Height="78" Margin="0,0,0,13">
                     <Grid Width="300"><Grid.ColumnDefinitions><ColumnDefinition Width="46"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <Border Width="38" Height="38" CornerRadius="19" Background="#2E3D59" VerticalAlignment="Center"><TextBlock Text="⌕" FontSize="24" Foreground="#C2D2F5" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                        <Border Width="38" Height="38" CornerRadius="19" Background="{DynamicResource LineBrush}" VerticalAlignment="Center"><TextBlock Text="⌕" FontSize="24" Foreground="{DynamicResource AccentTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left"><TextBlock Text="搜索已创建的聊天室" FontSize="15" /><TextBlock Text="浏览当前局域网的公开房间" FontSize="11" FontWeight="Normal" Opacity=".82" Margin="0,3,0,0" /></StackPanel>
                         <TextBlock Grid.Column="2" Text="›" FontSize="24" VerticalAlignment="Center" Margin="12,0,0,0" />
                     </Grid>
                 </Button>
 
-                <Button x:Name="CreateRoomButton" Click="CreateRoom_Click" Background="#1C2A20" Foreground="#E1F1DA" Padding="18,0" Height="78">
+                <Button x:Name="CreateRoomButton" Click="CreateRoom_Click" Background="{DynamicResource SuccessSoftBrush}" Foreground="{DynamicResource SuccessTextBrush}" Padding="18,0" Height="78">
                     <Grid Width="300"><Grid.ColumnDefinitions><ColumnDefinition Width="46"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <Border Width="38" Height="38" CornerRadius="19" Background="#354A36" VerticalAlignment="Center"><TextBlock Text="＋" FontSize="22" Foreground="#E1F1DA" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                        <Border Width="38" Height="38" CornerRadius="19" Background="{DynamicResource SuccessSoftBrush}" VerticalAlignment="Center"><TextBlock Text="＋" FontSize="22" Foreground="{DynamicResource SuccessTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left"><TextBlock Text="新建聊天室" FontSize="15" /><TextBlock Text="创建房间并邀请其他人" FontSize="11" FontWeight="Normal" Opacity=".82" Margin="0,3,0,0" /></StackPanel>
                         <TextBlock Grid.Column="2" Text="›" FontSize="24" VerticalAlignment="Center" Margin="12,0,0,0" />
                     </Grid>
                 </Button>
-                <TextBlock x:Name="ActionHint" Text="请选择一个选项" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="5,18,0,0" />
+                <TextBlock x:Name="ActionHint" Text="请选择一个选项" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="5,18,0,0" />
             </StackPanel>
         </Grid>
 
         <DockPanel Grid.Row="2" Margin="4,18,4,0">
-            <TextBlock Text="局域聊天室" FontSize="11" Foreground="{StaticResource MutedBrush}" DockPanel.Dock="Left" />
-            <TextBlock Text="主页面原型" FontSize="11" Foreground="{StaticResource MutedBrush}" DockPanel.Dock="Right" />
+            <TextBlock Text="局域聊天室" FontSize="11" Foreground="{DynamicResource MutedBrush}" DockPanel.Dock="Left" />
+            <TextBlock Text="主页面原型" FontSize="11" Foreground="{DynamicResource MutedBrush}" DockPanel.Dock="Right" />
         </DockPanel>
     </Grid>
 </Window>

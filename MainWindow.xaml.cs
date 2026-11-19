@@ -10,6 +10,7 @@ public partial class MainWindow : Window
 {
     private string? _currentUsername;
     private LoggerWindow? _loggerWindow;
+    private bool _themeReady;
 
     private void Pin_Checked(object sender, RoutedEventArgs e) => Topmost = true;
     private void Pin_Unchecked(object sender, RoutedEventArgs e) => Topmost = false;
@@ -18,7 +19,23 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         Closed += (_, _) => _loggerWindow?.Close();
+        ThemeToggle.IsChecked = ThemeManager.IsDark;
+        _themeReady = true;
+        UpdateThemeToggleLabel();
     }
+
+    private void ThemeToggle_Checked(object sender, RoutedEventArgs e) => SwitchTheme(true);
+    private void ThemeToggle_Unchecked(object sender, RoutedEventArgs e) => SwitchTheme(false);
+
+    private void SwitchTheme(bool dark)
+    {
+        if (!_themeReady) return;
+        ThemeManager.Apply(dark);
+        AppSettings.DarkMode = dark;
+        UpdateThemeToggleLabel();
+    }
+
+    private void UpdateThemeToggleLabel() => ThemeToggle.Content = ThemeManager.IsDark ? "☀ 浅色" : "🌙 深色";
 
     private void LogToggle_Checked(object sender, RoutedEventArgs e)
     {

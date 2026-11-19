@@ -54,6 +54,12 @@ public partial class App : Application
         };
     }
 
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        ThemeManager.Apply(AppSettings.DarkMode);
+        base.OnStartup(e);
+    }
+
     /// <summary>
     /// UI 线程异常会再触发一次 AppDomain 处理器，这里只记录第一次，
     /// 避免同一崩溃生成两份报告并把来源标错。

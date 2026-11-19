@@ -16,6 +16,10 @@
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Fonts\MiSans-Regular.otf" />
+    <Resource Include="Fonts\MiSans-Bold.otf" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="ThirdPartyNotices.txt" />
     <EmbeddedResource Include="third_party\rustdesk-1.5.3-x86_64.exe;third_party\rustdesk-1.5.3-corresponding-source.zip;third_party\AGPL-3.0.txt">
       <LogicalName>LanChat.RustDesk.%(Filename)%(Extension)</LogicalName>
