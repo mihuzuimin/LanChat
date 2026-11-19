@@ -4,7 +4,7 @@ LanChat 构建教程
 一、构建环境
 - Windows 10/11
 - .NET 8 SDK（包含 Windows 桌面/WPF targeting pack）
-- 无需安装第三方运行库或第三方 UI 库
+- 无需在目标电脑单独安装 .NET；远程控制由内置的 RustDesk 1.5.3 负责，不含其他编码运行库
 
 二、项目源码
 项目文件：LanChat.csproj
@@ -26,13 +26,14 @@ bin、obj 是构建过程中自动生成的目录，不包含项目所需的原�
   dotnet publish .\LanChat.csproj -c Release -r win-x64 --self-contained true `
     -p:PublishSingleFile=true `
     -p:IncludeNativeLibrariesForSelfExtract=true `
+    -p:EnableCompressionInSingleFile=true `
     -p:EnableWindowsTargeting=true `
     -o .\publish
 
 最终程序位于：
   .\publish\LanChat.exe
 
-该发布方式将 .NET 运行时随程序打包，目标计算机无需单独安装 .NET Runtime。发布时仍需要 .NET SDK 和网络可用，以便还原 SDK 所需的目标包。
+该发布方式将 .NET 运行时和 RustDesk 1.5.3 客户端随程序打包，目标计算机无需单独安装运行库。远控被同意时，程序会把 RustDesk 解压到当前用户 LocalAppData 缓存目录。发布时需要 .NET SDK 和网络可用，以便还原 SDK 目标包及 third_party 目录中的内置资源。RustDesk 许可文本见 third_party\AGPL-3.0.txt 和 ThirdPartyNotices.txt。
 
 五、清理构建输出
 清理普通 Release 输出：

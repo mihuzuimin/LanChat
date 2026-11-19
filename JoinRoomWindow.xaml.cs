@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.NetworkInformation;
+using System.Numerics;
 using System.Text.Json;
 using System.Windows;
 
@@ -43,20 +45,35 @@ public partial class JoinRoomWindow : Window
         _rooms.Clear();
         try
         {
-            using var udp = new UdpClient(0) { EnableBroadcast = true };
-            udp.Client.ReceiveTimeout = 3200;
+            using var udp = new UdpClient(new IPEndPoint(IPAddress.Any, 0)) { EnableBroadcast = true };
             var request = JsonSerializer.SerializeToUtf8Bytes(new DiscoveryPacket { Type = "discover" });
-            await udp.SendAsync(request, new IPEndPoint(IPAddress.Broadcast, DiscoveryPort));
-            var until = DateTime.UtcNow.AddSeconds(3);
+            var destinations = GetDiscoveryDestinations();
+            AppLog.Write($"局域网发现将向 {destinations.Count} 个广播地址发送请求。");
+            var until = DateTime.UtcNow.AddSeconds(5);
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                foreach (var destination in destinations)
+                {
+                    try { await udp.SendAsync(request, destination); }
+                    catch (SocketException ex) { AppLog.Write($"向 {destination} 发送房间发现请求失败：{ex.Message}"); }
+                }
+                if (attempt < 2) await Task.Delay(350);
+            }
             while (DateTime.UtcNow < until)
             {
-                using var receiveTimeout = new CancellationTokenSource(until - DateTime.UtcNow);
+                var remaining = until - DateTime.UtcNow;
+                if (remaining <= TimeSpan.Zero) break;
+                using var receiveTimeout = new CancellationTokenSource(remaining);
                 UdpReceiveResult result;
                 try { result = await udp.ReceiveAsync(receiveTimeout.Token); }
                 catch (OperationCanceledException) { break; }
-                var packet = JsonSerializer.Deserialize<DiscoveryPacket>(result.Buffer);
+                DiscoveryPacket? packet;
+                try { packet = JsonSerializer.Deserialize<DiscoveryPacket>(result.Buffer); }
+                catch (JsonException) { continue; }
                 if (packet?.Type != "room" || string.IsNullOrWhiteSpace(packet.Name) || packet.Port is < 1024 or > 65535) continue;
-                var address = packet.HostAddress ?? result.RemoteEndPoint.Address.ToString();
+                // Use the response source address; on multi-adapter machines the payload's
+                // first local address may belong to an unreachable VPN or virtual adapter.
+                var address = result.RemoteEndPoint.Address.ToString();
                 if (_rooms.Any(r => r.Host == address && r.Port == packet.Port && r.Name == packet.Name)) continue;
                 _rooms.Add(new DiscoveredRoom(packet.Name, address, packet.Port, packet.PasswordRequired));
             }
@@ -66,6 +83,31 @@ public partial class JoinRoomWindow : Window
         }
         catch (SocketException ex) { DialogSubtitle.Text = $"局域网搜索失败：{ex.Message}"; AppLog.Write($"UDP 房间搜索失败：{ex}"); }
         finally { SearchButton.IsEnabled = true; SearchButton.Content = "搜索"; }
+    }
+
+    private static List<IPEndPoint> GetDiscoveryDestinations()
+    {
+        var destinations = new HashSet<IPAddress> { IPAddress.Broadcast };
+        foreach (var adapter in NetworkInterface.GetAllNetworkInterfaces().Where(n => n.OperationalStatus == OperationalStatus.Up))
+        {
+            try
+            {
+                foreach (var address in adapter.GetIPProperties().UnicastAddresses)
+                {
+                    if (address.Address.AddressFamily != AddressFamily.InterNetwork || IPAddress.IsLoopback(address.Address) || address.IPv4Mask is null)
+                        continue;
+                    var ip = address.Address.GetAddressBytes();
+                    var mask = address.IPv4Mask.GetAddressBytes();
+                    var prefix = mask.Sum(b => BitOperations.PopCount((uint)b));
+                    if (prefix is 0 or >= 31 || ip[0] is 0 or 127 or >= 224) continue;
+                    var broadcast = new byte[4];
+                    for (var i = 0; i < broadcast.Length; i++) broadcast[i] = (byte)(ip[i] | ~mask[i]);
+                    destinations.Add(new IPAddress(broadcast));
+                }
+            }
+            catch (NetworkInformationException) { }
+        }
+        return destinations.Select(address => new IPEndPoint(address, DiscoveryPort)).ToList();
     }
 
     private void RoomsList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)

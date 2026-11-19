@@ -1,21 +1,19 @@
-# 构建产物
-[Bb]in/
-[Oo]bj/
-.vs/
-publish/
-publish-fd/
+# 构建输出
+bin/
+obj/
+publish*/
+publish-rustdesk/
 
-# MSIX 打包中间产物与工具缓存
-Packaging/.tools/
-Packaging/stage/
-Packaging/out/
-
-# 用户与临时文件
+# 调试/临时文件
+*.pdb
 *.user
 *.suo
+.vs/
 *.log
-Temp/
 
-# 系统文件
-Thumbs.db
-.DS_Store
+# 运行日志
+logs/
+LanChat-runtime-*.txt
+
+# 工具生成的本地仓库元数据
+third_party/rustdesk-gitmeta/
