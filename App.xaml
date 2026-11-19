@@ -32,6 +32,9 @@
         <SolidColorBrush x:Key="SuccessSoftBrush" Color="#E7F8F0" />
         <SolidColorBrush x:Key="SuccessTextBrush" Color="#04875A" />
         <SolidColorBrush x:Key="DangerSoftBrush" Color="#FEECEA" />
+        <SolidColorBrush x:Key="HoverLayerBrush" Color="#000000" />
+        <SolidColorBrush x:Key="TooltipBackgroundBrush" Color="#262A31" />
+        <SolidColorBrush x:Key="TooltipForegroundBrush" Color="#F5F6F8" />
 
         <LinearGradientBrush x:Key="WindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#F8F9FB" Offset="0" />
@@ -54,6 +57,9 @@
 
         <!-- 卡片阴影 -->
         <DropShadowEffect x:Key="CardShadow" Color="#2A3346" BlurRadius="26" ShadowDepth="4" Direction="270" Opacity="0.07" />
+        <DropShadowEffect x:Key="PrimaryGlowShadow" BlurRadius="18" ShadowDepth="4" Direction="270" Color="#FF6900" Opacity="0.26" />
+        <DropShadowEffect x:Key="CardButtonShadow" BlurRadius="20" ShadowDepth="3" Direction="270" Color="#2A3346" Opacity="0.05" />
+        <DropShadowEffect x:Key="MenuShadow" BlurRadius="20" ShadowDepth="4" Direction="270" Color="#2A3346" Opacity="0.14" />
 
         <!-- ============ 按钮：胶囊形 ============ -->
         <Style TargetType="Button">
@@ -76,7 +82,7 @@
                                     BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="20" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True" />
                             </Border>
-                            <Border x:Name="HoverLayer" Background="#000000" Opacity="0" CornerRadius="20" IsHitTestVisible="False" />
+                            <Border x:Name="HoverLayer" Background="{DynamicResource HoverLayerBrush}" Opacity="0" CornerRadius="20" IsHitTestVisible="False" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="Content" Value="✕">
@@ -111,11 +117,7 @@
             <Setter Property="Background" Value="{DynamicResource PrimaryGradientBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="270" Color="#FF6900" Opacity="0.26" />
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Effect" Value="{DynamicResource PrimaryGlowShadow}" />
         </Style>
 
         <!-- 卡片式大按钮（首页入口） -->
@@ -127,11 +129,7 @@
             <Setter Property="MinHeight" Value="74" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="FontWeight" Value="Normal" />
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="20" ShadowDepth="3" Direction="270" Color="#2A3346" Opacity="0.05" />
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Effect" Value="{DynamicResource CardButtonShadow}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -177,7 +175,7 @@
                                     BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="18" Padding="{TemplateBinding Padding}">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-                            <Border x:Name="HoverLayer" Background="#000000" Opacity="0" CornerRadius="18" IsHitTestVisible="False" />
+                            <Border x:Name="HoverLayer" Background="{DynamicResource HoverLayerBrush}" Opacity="0" CornerRadius="18" IsHitTestVisible="False" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
@@ -468,10 +466,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ContextMenu">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="14" Padding="5">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Color="#2A3346" Opacity="0.14" />
-                            </Border.Effect>
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="14" Padding="5" Effect="{DynamicResource MenuShadow}">
                             <ItemsPresenter />
                         </Border>
                     </ControlTemplate>
@@ -509,8 +504,8 @@
 
         <!-- ============ 提示 ============ -->
         <Style TargetType="ToolTip">
-            <Setter Property="Foreground" Value="#F5F6F8" />
-            <Setter Property="Background" Value="#262A31" />
+            <Setter Property="Foreground" Value="{DynamicResource TooltipForegroundBrush}" />
+            <Setter Property="Background" Value="{DynamicResource TooltipBackgroundBrush}" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Template">
@@ -577,50 +572,70 @@
             <SolidColorBrush x:Key="SuccessSoftBrush" Color="#E7F8F0" />
             <SolidColorBrush x:Key="SuccessTextBrush" Color="#04875A" />
             <SolidColorBrush x:Key="DangerSoftBrush" Color="#FEECEA" />
+            <SolidColorBrush x:Key="HoverLayerBrush" Color="#000000" />
+            <SolidColorBrush x:Key="TooltipBackgroundBrush" Color="#262A31" />
+            <SolidColorBrush x:Key="TooltipForegroundBrush" Color="#F5F6F8" />
             <LinearGradientBrush x:Key="WindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
                 <GradientStop Color="#F8F9FB" Offset="0" />
                 <GradientStop Color="#F1F3F6" Offset="0.55" />
                 <GradientStop Color="#F6F7F9" Offset="1" />
             </LinearGradientBrush>
+            <LinearGradientBrush x:Key="PrimaryGradientBrush" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#FF8A3D" Offset="0" />
+                <GradientStop Color="#FF5C00" Offset="1" />
+            </LinearGradientBrush>
             <LinearGradientBrush x:Key="CardGradientBrush" StartPoint="0,0" EndPoint="0,1">
                 <GradientStop Color="#FFFFFF" Offset="0" />
                 <GradientStop Color="#FDFDFE" Offset="1" />
             </LinearGradientBrush>
+            <DropShadowEffect x:Key="PrimaryGlowShadow" BlurRadius="18" ShadowDepth="4" Direction="270" Color="#FF6900" Opacity="0.26" />
+            <DropShadowEffect x:Key="CardButtonShadow" BlurRadius="20" ShadowDepth="3" Direction="270" Color="#2A3346" Opacity="0.05" />
+            <DropShadowEffect x:Key="MenuShadow" BlurRadius="20" ShadowDepth="4" Direction="270" Color="#2A3346" Opacity="0.14" />
         </ResourceDictionary>
 
         <ResourceDictionary x:Key="DarkPalette">
-            <SolidColorBrush x:Key="OnSurfaceBrush" Color="#E9EBF0" />
-            <SolidColorBrush x:Key="MutedBrush" Color="#9BA3AF" />
-            <SolidColorBrush x:Key="SubtleBrush" Color="#6E7681" />
+            <SolidColorBrush x:Key="OnSurfaceBrush" Color="#D8DBE2" />
+            <SolidColorBrush x:Key="MutedBrush" Color="#8B929E" />
+            <SolidColorBrush x:Key="SubtleBrush" Color="#5C626D" />
             <SolidColorBrush x:Key="SurfaceBrush" Color="#1A1C21" />
             <SolidColorBrush x:Key="SurfaceAltBrush" Color="#24262D" />
             <SolidColorBrush x:Key="ElevatedBrush" Color="#22242A" />
             <SolidColorBrush x:Key="ControlSurfaceBrush" Color="#24262D" />
             <SolidColorBrush x:Key="LineBrush" Color="#33363E" />
             <SolidColorBrush x:Key="LineSoftBrush" Color="#2A2C33" />
-            <SolidColorBrush x:Key="PrimaryBrush" Color="#FF7A1A" />
-            <SolidColorBrush x:Key="OnPrimaryBrush" Color="#FFFFFF" />
-            <SolidColorBrush x:Key="DangerBrush" Color="#FF6B5E" />
-            <SolidColorBrush x:Key="SuccessBrush" Color="#34D399" />
-            <SolidColorBrush x:Key="SoftAccentBrush" Color="#FF9A56" />
+            <SolidColorBrush x:Key="PrimaryBrush" Color="#9E5019" />
+            <SolidColorBrush x:Key="OnPrimaryBrush" Color="#EFE7DE" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#B25A50" />
+            <SolidColorBrush x:Key="SuccessBrush" Color="#37795F" />
+            <SolidColorBrush x:Key="SoftAccentBrush" Color="#8C5832" />
             <SolidColorBrush x:Key="ChipBrush" Color="#2A2C33" />
-            <SolidColorBrush x:Key="AccentSoftBrush" Color="#3A2718" />
-            <SolidColorBrush x:Key="AccentSoftBorderBrush" Color="#5C3A1D" />
-            <SolidColorBrush x:Key="AccentTextBrush" Color="#FFB27A" />
+            <SolidColorBrush x:Key="AccentSoftBrush" Color="#33251A" />
+            <SolidColorBrush x:Key="AccentSoftBorderBrush" Color="#4A331F" />
+            <SolidColorBrush x:Key="AccentTextBrush" Color="#A87C55" />
             <SolidColorBrush x:Key="InfoSoftBrush" Color="#1B2A40" />
-            <SolidColorBrush x:Key="InfoTextBrush" Color="#7FB0FF" />
-            <SolidColorBrush x:Key="SuccessSoftBrush" Color="#153026" />
-            <SolidColorBrush x:Key="SuccessTextBrush" Color="#5BE0A8" />
-            <SolidColorBrush x:Key="DangerSoftBrush" Color="#3B2020" />
+            <SolidColorBrush x:Key="InfoTextBrush" Color="#6C93C4" />
+            <SolidColorBrush x:Key="SuccessSoftBrush" Color="#1B2A23" />
+            <SolidColorBrush x:Key="SuccessTextBrush" Color="#438B6E" />
+            <SolidColorBrush x:Key="DangerSoftBrush" Color="#332222" />
+            <SolidColorBrush x:Key="HoverLayerBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="TooltipBackgroundBrush" Color="#2E3138" />
+            <SolidColorBrush x:Key="TooltipForegroundBrush" Color="#D8DBE2" />
             <LinearGradientBrush x:Key="WindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
                 <GradientStop Color="#141519" Offset="0" />
                 <GradientStop Color="#0F1014" Offset="0.55" />
                 <GradientStop Color="#121317" Offset="1" />
             </LinearGradientBrush>
+            <LinearGradientBrush x:Key="PrimaryGradientBrush" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#8C4517" Offset="0" />
+                <GradientStop Color="#65300D" Offset="1" />
+            </LinearGradientBrush>
             <LinearGradientBrush x:Key="CardGradientBrush" StartPoint="0,0" EndPoint="0,1">
                 <GradientStop Color="#1E2026" Offset="0" />
                 <GradientStop Color="#191B20" Offset="1" />
             </LinearGradientBrush>
+            <DropShadowEffect x:Key="PrimaryGlowShadow" BlurRadius="16" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.45" />
+            <DropShadowEffect x:Key="CardButtonShadow" BlurRadius="20" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.4" />
+            <DropShadowEffect x:Key="MenuShadow" BlurRadius="22" ShadowDepth="5" Direction="270" Color="#000000" Opacity="0.55" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

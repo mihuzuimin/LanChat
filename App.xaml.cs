@@ -14,6 +14,8 @@ public partial class App : Application
         AppLog.Write("程序启动。");
         AttachmentStore.PurgeStale();
 
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(Window_Loaded));
+
         DispatcherUnhandledException += (_, e) =>
         {
             var exception = e.Exception;
@@ -58,6 +60,11 @@ public partial class App : Application
     {
         ThemeManager.Apply(AppSettings.DarkMode);
         base.OnStartup(e);
+    }
+
+    private static void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is Window window) ThemeManager.ApplyWindowChrome(window);
     }
 
     /// <summary>
