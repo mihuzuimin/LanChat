@@ -10,6 +10,7 @@ public partial class MainWindow : Window
 {
     private string? _currentUsername;
     private LoggerWindow? _loggerWindow;
+    private ChatRoomView? _roomView;
     private bool _themeReady;
 
     private void Pin_Checked(object sender, RoutedEventArgs e) => Topmost = true;
@@ -18,10 +19,36 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        Closed += (_, _) => _loggerWindow?.Close();
+        Closed += (_, _) =>
+        {
+            _loggerWindow?.Close();
+            if (_roomView is { } room) _ = room.ShutdownAsync();
+        };
         ThemeToggle.IsChecked = ThemeManager.IsDark;
         _themeReady = true;
         UpdateThemeToggleLabel();
+    }
+
+    /// <summary>在当前窗口内显示聊天室，不再另开窗口。</summary>
+    private void ShowRoomView(ChatRoomView view)
+    {
+        _roomView = view;
+        view.CloseRequested += RoomView_CloseRequested;
+        HomePage.Visibility = Visibility.Collapsed;
+        RoomHost.Content = view;
+        RoomHost.Visibility = Visibility.Visible;
+    }
+
+    private async void RoomView_CloseRequested()
+    {
+        var view = _roomView;
+        if (view is null) return;
+        _roomView = null;
+        view.CloseRequested -= RoomView_CloseRequested;
+        await view.ShutdownAsync();
+        RoomHost.Content = null;
+        RoomHost.Visibility = Visibility.Collapsed;
+        HomePage.Visibility = Visibility.Visible;
     }
 
     private void ThemeToggle_Checked(object sender, RoutedEventArgs e) => SwitchTheme(true);
@@ -114,9 +141,9 @@ public partial class MainWindow : Window
         try
         {
             await VerifyRoomCredentialsAsync(dialog);
-            var room = new ChatRoomWindow(dialog.RoomName, dialog.Host, dialog.Port, dialog.Password,
+            var room = new ChatRoomView(dialog.RoomName, dialog.Host, dialog.Port, dialog.Password,
                 _currentUsername!);
-            room.Show();
+            ShowRoomView(room);
             ActionHint.Text = $"正在加入“{dialog.RoomName}”";
             AppLog.Write($"已加入聊天室“{dialog.RoomName}”。");
         }
@@ -179,8 +206,8 @@ public partial class MainWindow : Window
 
         try
         {
-            var room = new ChatRoomWindow(setup.RoomName, setup.Port, setup.Password, _currentUsername!, setup.IsPublic);
-            room.Show();
+            var room = new ChatRoomView(setup.RoomName, setup.Port, setup.Password, _currentUsername!, setup.IsPublic);
+            ShowRoomView(room);
             ActionHint.Text = $"聊天室“{setup.RoomName}”已创建 · 端口 {setup.Port}";
             AppLog.Write($"聊天室“{setup.RoomName}”创建成功。");
         }

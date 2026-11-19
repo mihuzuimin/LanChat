@@ -4,7 +4,8 @@
         Title="局域聊天室" Width="1080" Height="760" MinWidth="900" MinHeight="640"
         WindowStartupLocation="CenterScreen" Background="{DynamicResource WindowBackgroundBrush}" Foreground="{DynamicResource OnSurfaceBrush}"
         FontFamily="{StaticResource AppFontFamily}">
-    <Grid Margin="32">
+    <Grid>
+        <Grid x:Name="HomePage" Margin="32">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <DockPanel Grid.Row="0" Margin="0,0,0,30">
             <Border Width="54" Height="54" CornerRadius="19" Background="{DynamicResource AccentSoftBrush}" Margin="0,0,16,0" DockPanel.Dock="Left">
@@ -79,5 +80,8 @@
             <TextBlock Text="局域聊天室" FontSize="11" Foreground="{DynamicResource MutedBrush}" DockPanel.Dock="Left" />
             <TextBlock Text="主页面原型" FontSize="11" Foreground="{DynamicResource MutedBrush}" DockPanel.Dock="Right" />
         </DockPanel>
+        </Grid>
+
+        <ContentControl x:Name="RoomHost" Visibility="Collapsed" />
     </Grid>
 </Window>

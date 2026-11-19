@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -21,8 +21,21 @@ using System.ComponentModel;
 
 namespace LanChat;
 
-public partial class ChatRoomWindow : Window
+public partial class ChatRoomView : UserControl
 {
+    /// <summary>请求宿主切回主页（关闭房间）。</summary>
+    public event Action? CloseRequested;
+
+    private readonly ObservableCollection<string> _roomLogEntries = new();
+
+    private Window HostWindow => Window.GetWindow(this)!;
+
+    private void ShowMessage(string text, string caption, MessageBoxButton button, MessageBoxImage icon)
+    {
+        if (HostWindow is { } owner) MessageBox.Show(owner, text, caption, button, icon);
+        else MessageBox.Show(text, caption, button, icon);
+    }
+
     private const long MaxAttachmentBytes = 1024L * 1024 * 1024;
     private const int AttachmentChunkBytes = 512 * 1024;
     private const int MaxAttachmentChunks = 4096;
@@ -168,10 +181,11 @@ public partial class ChatRoomWindow : Window
         public uint ProcessId;
     }
 
-    public ChatRoomWindow(string roomName, int port, string password, string userName, bool isPublic)
+    public ChatRoomView(string roomName, int port, string password, string userName, bool isPublic)
     {
         InitializeComponent();
         ConfigureSendShortcut();
+        InitRoomLog();
         DataObject.AddPastingHandler(MessageInput, MessageInput_Pasting);
         StartStatusLogging();
         _roomName = roomName;
@@ -223,9 +237,39 @@ public partial class ChatRoomWindow : Window
 
     public bool IsPublic { get; }
 
-    private void Pin_Checked(object sender, RoutedEventArgs e) => Topmost = true;
-    private void Pin_Unchecked(object sender, RoutedEventArgs e) => Topmost = false;
-    private void CloseWindow_Click(object sender, RoutedEventArgs e) => Close();
+    private void Pin_Checked(object sender, RoutedEventArgs e)
+    {
+        if (HostWindow is { } window) window.Topmost = true;
+    }
+
+    private void Pin_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (HostWindow is { } window) window.Topmost = false;
+    }
+
+    private void CloseWindow_Click(object sender, RoutedEventArgs e) => RequestClose();
+
+    private void InitRoomLog()
+    {
+        RoomLogList.ItemsSource = _roomLogEntries;
+        foreach (var entry in AppLog.GetSnapshot()) _roomLogEntries.Add(entry);
+        AppLog.EntryAdded += OnRoomLogEntryAdded;
+    }
+
+    private void OnRoomLogEntryAdded(string entry)
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            _roomLogEntries.Add(entry);
+            if (_roomLogEntries.Count > 500) _roomLogEntries.RemoveAt(0);
+            if (RoomLogList.Items.Count > 0) RoomLogList.ScrollIntoView(RoomLogList.Items[^1]);
+        });
+    }
+
+    private void RoomLogToggle_Checked(object sender, RoutedEventArgs e) => RoomLogPanel.Visibility = Visibility.Visible;
+    private void RoomLogToggle_Unchecked(object sender, RoutedEventArgs e) => RoomLogPanel.Visibility = Visibility.Collapsed;
+
+    private void ClearRoomLog_Click(object sender, RoutedEventArgs e) => _roomLogEntries.Clear();
 
     private void StartStatusLogging()
     {
@@ -256,10 +300,11 @@ public partial class ChatRoomWindow : Window
         _statusTimer.Start();
     }
 
-    public ChatRoomWindow(string roomName, string host, int port, string password, string userName)
+    public ChatRoomView(string roomName, string host, int port, string password, string userName)
     {
         InitializeComponent();
         ConfigureSendShortcut();
+        InitRoomLog();
         DataObject.AddPastingHandler(MessageInput, MessageInput_Pasting);
         StartStatusLogging();
         _roomName = roomName;
@@ -341,9 +386,9 @@ public partial class ChatRoomWindow : Window
                     AppLog.Write($"聊天室“{_roomName}”的主机关闭了连接。");
                     await Dispatcher.InvokeAsync(() =>
                     {
-                        var notice = new ConnectionClosedWindow { Owner = this };
+                        var notice = new ConnectionClosedWindow { Owner = HostWindow };
                         notice.ShowDialog();
-                        Close();
+                        RequestClose();
                     });
                     return;
                 }
@@ -355,8 +400,8 @@ public partial class ChatRoomWindow : Window
                         AppLog.Write($"房间访问被拒绝：{reason}。");
                         await Dispatcher.InvokeAsync(() =>
                         {
-                            new RoomAccessNoticeWindow(reason) { Owner = this }.ShowDialog();
-                            Close();
+                            new RoomAccessNoticeWindow(reason) { Owner = HostWindow }.ShowDialog();
+                            RequestClose();
                         });
                         return;
                     }
@@ -1022,7 +1067,7 @@ public partial class ChatRoomWindow : Window
         catch (JsonException) { records = []; }
         new BanListWindow(records,
             record => _ = SendAdminCommandAsync($"{(record.Kind == "用户封禁" ? "/unban" : "/unipban")} {record.Target}"))
-        { Owner = this }.ShowDialog();
+        { Owner = HostWindow }.ShowDialog();
     }
 
     private void MembersList_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -1269,7 +1314,7 @@ public partial class ChatRoomWindow : Window
         {
             new BanListWindow(BuildBanRecords(),
                 record => _ = RunOwnerCommandAsync($"{(record.Kind == "用户封禁" ? "/unban" : "/unipban")} {record.Target}"))
-            { Owner = this }.ShowDialog();
+            { Owner = HostWindow }.ShowDialog();
             return;
         }
         if (_myRole != "管理员")
@@ -1398,7 +1443,7 @@ public partial class ChatRoomWindow : Window
             await RespondToRemoteRequestAsync(session.SessionId, false);
             return;
         }
-        var consent = new RemoteControlConsentWindow(session.RequesterName, session.RequesterIp) { Owner = this };
+        var consent = new RemoteControlConsentWindow(session.RequesterName, session.RequesterIp) { Owner = HostWindow };
         var previousForeground = GetForegroundWindow();
         bool accepted;
         try { accepted = consent.ShowDialog() == true; }
@@ -1449,7 +1494,7 @@ public partial class ChatRoomWindow : Window
         if (session.RequesterIsLocal)
         {
             if (accepted) _ = LaunchRustDeskConnectionAsync(sessionId, session.TargetName, session.TargetIp, _rustDeskIds.GetValueOrDefault(sessionId));
-            else MessageBox.Show(this, "对方已拒绝", "远程控制", MessageBoxButton.OK, MessageBoxImage.Information);
+            else ShowMessage("对方已拒绝", "远程控制", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         else if (session.RequesterPeer is not null) await SendPeerPacketAsync(session.RequesterPeer, response, _shutdown.Token);
         if (accepted && session.TargetPeer is not null)
@@ -1474,7 +1519,7 @@ public partial class ChatRoomWindow : Window
         if (session.RequesterIsLocal)
         {
             if (accepted) _ = LaunchRustDeskConnectionAsync(session.SessionId, session.TargetName, session.TargetIp, packet.RustDeskId);
-            else await Dispatcher.InvokeAsync(() => MessageBox.Show(this, "对方已拒绝", "远程控制", MessageBoxButton.OK, MessageBoxImage.Information));
+            else await Dispatcher.InvokeAsync(() => ShowMessage("对方已拒绝", "远程控制", MessageBoxButton.OK, MessageBoxImage.Information));
         }
         else if (session.RequesterPeer is not null) await SendPeerPacketAsync(session.RequesterPeer, response, cancellationToken);
         if (!accepted)
@@ -1544,12 +1589,12 @@ public partial class ChatRoomWindow : Window
                 break;
             case "remote-declined":
                 ReleaseControllerSession(packet.SessionId);
-                await Dispatcher.InvokeAsync(() => MessageBox.Show(this, packet.Text ?? "对方已拒绝", "远程控制", MessageBoxButton.OK, MessageBoxImage.Information));
+                await Dispatcher.InvokeAsync(() => ShowMessage(packet.Text ?? "对方已拒绝", "远程控制", MessageBoxButton.OK, MessageBoxImage.Information));
                 AppLog.Write($"远程控制申请被拒绝，会话 {packet.SessionId}。");
                 break;
             case "remote-error":
                 ReleaseControllerSession(packet.SessionId);
-                await Dispatcher.InvokeAsync(() => MessageBox.Show(this, packet.Text ?? "远程控制申请失败。", "远程控制", MessageBoxButton.OK, MessageBoxImage.Information));
+                await Dispatcher.InvokeAsync(() => ShowMessage(packet.Text ?? "远程控制申请失败。", "远程控制", MessageBoxButton.OK, MessageBoxImage.Information));
                 break;
             case "remote-stop":
                 await Dispatcher.InvokeAsync(() =>
@@ -1575,7 +1620,7 @@ public partial class ChatRoomWindow : Window
             await WriteUpstreamPacketAsync(new RoomPacket { Type = "remote-response", SessionId = sessionId, Accepted = false }, _shutdown.Token);
             return;
         }
-        var consent = new RemoteControlConsentWindow(requesterName, requesterIp) { Owner = this };
+        var consent = new RemoteControlConsentWindow(requesterName, requesterIp) { Owner = HostWindow };
         var previousForeground = GetForegroundWindow();
         bool accepted;
         try { accepted = consent.ShowDialog() == true; }
@@ -1660,7 +1705,7 @@ public partial class ChatRoomWindow : Window
     {
         var mode = await Dispatcher.InvokeAsync(() =>
         {
-            var dialog = new RustDeskConnectModeWindow(targetName, targetIp, rustDeskId) { Owner = this };
+            var dialog = new RustDeskConnectModeWindow(targetName, targetIp, rustDeskId) { Owner = HostWindow };
             return dialog.ShowDialog() == true ? dialog.Mode : RustDeskConnectMode.None;
         });
         if (mode == RustDeskConnectMode.None)
@@ -1680,7 +1725,7 @@ public partial class ChatRoomWindow : Window
         {
             if (!IPAddress.TryParse(targetIp, out address) || address.AddressFamily != AddressFamily.InterNetwork)
             {
-                await Dispatcher.InvokeAsync(() => MessageBox.Show(this, "无法获取对方的 IPv4 地址，不能使用 IP 直连。", "RustDesk", MessageBoxButton.OK, MessageBoxImage.Warning));
+                await Dispatcher.InvokeAsync(() => ShowMessage("无法获取对方的 IPv4 地址，不能使用 IP 直连。", "RustDesk", MessageBoxButton.OK, MessageBoxImage.Warning));
                 await SendRemoteStopAsync(sessionId);
                 return;
             }
@@ -1690,7 +1735,7 @@ public partial class ChatRoomWindow : Window
         {
             if (string.IsNullOrWhiteSpace(rustDeskId))
             {
-                await Dispatcher.InvokeAsync(() => MessageBox.Show(this, "对方没有提供 RustDesk ID，无法使用 ID 连接。", "RustDesk", MessageBoxButton.OK, MessageBoxImage.Warning));
+                await Dispatcher.InvokeAsync(() => ShowMessage("对方没有提供 RustDesk ID，无法使用 ID 连接。", "RustDesk", MessageBoxButton.OK, MessageBoxImage.Warning));
                 await SendRemoteStopAsync(sessionId);
                 return;
             }
@@ -1701,7 +1746,7 @@ public partial class ChatRoomWindow : Window
         {
             if (!await RustDeskRuntime.EnsureRunningAsync(_shutdown.Token))
             {
-                await Dispatcher.InvokeAsync(() => MessageBox.Show(this,
+                await Dispatcher.InvokeAsync(() => ShowMessage(
                     "RustDesk 客户端未能启动。请确认程序目录可写入，并允许安全软件放行内置的 RustDesk。",
                     "无法启动 RustDesk", MessageBoxButton.OK, MessageBoxImage.Warning));
                 await SendRemoteStopAsync(sessionId);
@@ -1710,7 +1755,7 @@ public partial class ChatRoomWindow : Window
 
             if (mode == RustDeskConnectMode.DirectIp && !await WaitForRustDeskDirectAccessAsync(address!, _shutdown.Token))
             {
-                await Dispatcher.InvokeAsync(() => MessageBox.Show(this,
+                await Dispatcher.InvokeAsync(() => ShowMessage(
                     $"{targetName} 的 RustDesk 直连端口未响应。\n\n如果双方不在同一局域网，请重新发起远控并选择“RustDesk ID 连接”；若在同一局域网，请确认对方 LanChat 已显示“RustDesk 已就绪”，并允许 RustDesk 通过 Windows 防火墙。",
                     "无法连接 RustDesk", MessageBoxButton.OK, MessageBoxImage.Information));
                 await SendRemoteStopAsync(sessionId);
@@ -1747,7 +1792,7 @@ public partial class ChatRoomWindow : Window
         catch (Exception ex) when (ex is IOException or InvalidOperationException or Win32Exception or UnauthorizedAccessException or SocketException)
         {
             AppLog.Write($"RustDesk 连接启动失败（{sessionId}）：{ex}");
-            await Dispatcher.InvokeAsync(() => MessageBox.Show(this, $"RustDesk 连接启动失败：{ex.Message}", "RustDesk", MessageBoxButton.OK, MessageBoxImage.Error));
+            await Dispatcher.InvokeAsync(() => ShowMessage($"RustDesk 连接启动失败：{ex.Message}", "RustDesk", MessageBoxButton.OK, MessageBoxImage.Error));
             await SendRemoteStopAsync(sessionId);
         }
     }
@@ -1992,7 +2037,7 @@ public partial class ChatRoomWindow : Window
             Filter = imageOnly ? "图片文件|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.webp" : "所有文件|*.*",
             Multiselect = false
         };
-        if (dialog.ShowDialog(this) != true) return;
+        if (dialog.ShowDialog(HostWindow) != true) return;
         await UploadFilesAsync(new[] { dialog.FileName }, imageOnly);
     }
 
@@ -2117,7 +2162,7 @@ public partial class ChatRoomWindow : Window
             if (!_shutdown.IsCancellationRequested)
             {
                 SetUploadProgress($"上传失败：{info.Name}", UploadProgressBar.Value, Math.Max(1, UploadProgressBar.Maximum));
-                MessageBox.Show(this, $"无法读取或发送文件：{ex.Message}", "发送失败", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"无法读取或发送文件：{ex.Message}", "发送失败", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         catch (Exception ex) when (ex is SocketException or ObjectDisposedException or OperationCanceledException or ArgumentException)
@@ -2126,7 +2171,7 @@ public partial class ChatRoomWindow : Window
             if (!_shutdown.IsCancellationRequested)
             {
                 SetUploadProgress($"上传失败：{info.Name}", UploadProgressBar.Value, Math.Max(1, UploadProgressBar.Maximum));
-                MessageBox.Show(this, $"附件发送失败：{ex.Message}", "发送失败", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"附件发送失败：{ex.Message}", "发送失败", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         finally
@@ -2301,7 +2346,7 @@ public partial class ChatRoomWindow : Window
             Title = "选择默认下载文件夹",
             InitialDirectory = Directory.Exists(AppSettings.DownloadFolder) ? AppSettings.DownloadFolder : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
         };
-        if (dialog.ShowDialog(this) != true) return;
+        if (dialog.ShowDialog(HostWindow) != true) return;
         AppSettings.DownloadFolder = dialog.FolderName;
         AppLog.Write($"下载默认目录已更改为：{dialog.FolderName}。");
         RoomSubtitle.Text = $"默认下载位置：{AppSettings.DownloadFolder}";
@@ -2325,7 +2370,7 @@ public partial class ChatRoomWindow : Window
                 Title = "选择附件保存位置",
                 OverwritePrompt = true
             };
-            if (dialog.ShowDialog(this) != true) return;
+            if (dialog.ShowDialog(HostWindow) != true) return;
             Directory.CreateDirectory(Path.GetDirectoryName(dialog.FileName)!);
             // 逐块复制，避免大文件整份读进内存。
             using (var source = new FileStream(message.DataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 64 * 1024))
@@ -2336,7 +2381,7 @@ public partial class ChatRoomWindow : Window
         }
         catch (Exception ex) when (ex is FormatException or IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException)
         {
-            MessageBox.Show(this, $"无法保存附件：{ex.Message}", "保存失败", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowMessage($"无法保存附件：{ex.Message}", "保存失败", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -2782,12 +2827,24 @@ public partial class ChatRoomWindow : Window
         return (privateAddress ?? addresses.FirstOrDefault())?.ToString() ?? "IP 未知";
     }
 
-    private async void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    private void RequestClose()
     {
-        if (_allowClose) return;
-        e.Cancel = true;
         if (_closingStarted) return;
+        CloseRequested?.Invoke();
+    }
+
+    private async void View_Unloaded(object sender, RoutedEventArgs e)
+    {
+        if (_allowClose || _closingStarted) return;
+        await ShutdownAsync();
+    }
+
+    /// <summary>释放房间资源；由宿主在切回主页前调用。</summary>
+    public async Task ShutdownAsync()
+    {
+        if (_allowClose || _closingStarted) return;
         _closingStarted = true;
+        AppLog.EntryAdded -= OnRoomLogEntryAdded;
         _statusTimer.Stop();
         try
         {
@@ -2835,7 +2892,6 @@ public partial class ChatRoomWindow : Window
             }
             try { _shutdown.Dispose(); } catch (ObjectDisposedException) { }
             _allowClose = true;
-            _ = Dispatcher.BeginInvoke(new Action(Close), DispatcherPriority.Background);
         }
     }
 
